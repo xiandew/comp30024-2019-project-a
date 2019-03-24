@@ -100,7 +100,8 @@ class Node:
         return "<Node {}>".format(self.state)
 
     def __lt__(self, node):
-        return self.state < node.state
+        """self.state < node.state -> str(self.state) < str(node.state)"""
+        return str(self.state) < str(node.state)
 
     def expand(self, problem):
         """List the nodes reachable in one step from this node."""
@@ -270,9 +271,11 @@ def best_first_graph_search(problem, f):
         node = frontier.pop()
         if problem.goal_test(node.state):
             return node
-        explored.add(node.state)
+        """explored.add(node.state) -> explored.add(str(node.state))"""
+        explored.add(str(node.state))
         for child in node.expand(problem):
-            if child.state not in explored and child not in frontier:
+            """child.state -> str(child.state)"""
+            if str(child.state) not in explored and child not in frontier:
                 frontier.append(child)
             elif child in frontier:
                 if f(child) < frontier[child]:
@@ -420,7 +423,7 @@ class EightPuzzle(Problem):
     def __init__(self, initial, goal=(1, 2, 3, 4, 5, 6, 7, 8, 0)):
         """ Define goal state and initialize a problem """
 
-        self.goal = goal
+        # self.goal = goal
         Problem.__init__(self, initial, goal)
 
     def find_blank_square(self, state):
@@ -466,22 +469,29 @@ class EightPuzzle(Problem):
 
         return state == self.goal
 
-    def check_solvability(self, state):
-        """ Checks if the given state is solvable """
-
-        inversion = 0
-        for i in range(len(state)):
-            for j in range(i+1, len(state)):
-                if (state[i] > state[j]) and state[i] != 0 and state[j]!= 0:
-                    inversion += 1
-
-        return inversion % 2 == 0
+    # def check_solvability(self, state):
+    #     """ Checks if the given state is solvable """
+    #
+    #     inversion = 0
+    #     for i in range(len(state)):
+    #         for j in range(i+1, len(state)):
+    #             if (state[i] > state[j]) and state[i] != 0 and state[j]!= 0:
+    #                 inversion += 1
+    #
+    #     return inversion % 2 == 0
 
     def h(self, node):
         """ Return the heuristic value for a given state. Default heuristic function used is
         h(n) = number of misplaced tiles """
 
-        return sum(s != g for (s, g) in zip(node.state, self.goal))
+        # return sum(s != g for (s, g) in zip(node.state, self.goal))
+
+        """ total Manhattan distance """
+        return sum(
+            abs(node.state.index(n) % 3 - self.goal.index(n) % 3) +
+            abs(node.state.index(n) // 3 - self.goal.index(n) // 3)
+            for n in self.goal
+        )
 
 # ______________________________________________________________________________
 

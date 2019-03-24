@@ -11,49 +11,141 @@ import json
 from collections import defaultdict as dd
 from aima_python.search import *
 
+TOTAL_HEXES = 37
+
+# avoid typos
+COLOUR = "colour"
+PIECES = "pieces"
+BLOCKS = "blocks"
+MOVE = "move"
+JUMP = "jump"
+EXIT = "exit"
+
+MOVE_DELTA = [(0, 1), (1, 0), (-1, 1), (0, -1), (-1, 0), (1, -1)]
+JUMP_DELTA = [(0, -2), (2, -2), (2, 0), (0, 2), (-2, 2), (-2, 0)]
+EXIT_HEXES = {
+    "red": [(3, -3), (3, -2), (3, -1), (3, 0)],
+}
+
 def main():
+    # test EightPuzzle. Awesome Astar search!
+    # initial_state = (7, 0, 2, 6, 5, 3, 4, 1, 8)
+    # goal_state = (1, 2, 3, 4, 0, 5, 6, 7, 8)
+    # problem = EightPuzzle(initial_state, goal_state)
+    # goal_node = astar_search(problem)
+    # node = goal_node
+    # while node.state != initial_state:
+    #     print(node.state)
+    #     node = node.parent
+    # print(node.state)
+
+    # initial state: a `board_dict` with pieces and blocks specified in the json file
+    # actions: move, jump, exit
+    # goal test: all pieces need to be in the exit hexes and exit
+
+    # setup all 37 hexes
+    hexes = [(0, 0)]
+    for (x, y) in hexes:
+        if len(set(hexes)) == TOTAL_HEXES:
+            break
+        hexes += [(x + delta_x, y + delta_y)
+                    for delta_x, delta_y in MOVE_DELTA]
+
+    # setup the initial state
+    initial_state = dict(zip(set(hexes), [""] * TOTAL_HEXES))
     with open(sys.argv[1]) as file:
         data = json.load(file)
 
-        # board_dict = dd(str);
-        # for k in data:
-        #     if k == "colour":
-        #         continue;
-        #     for coor in data[k]:
-        #         board_dict[tuple(coor)] = data["colour"] if k == "pieces" else "BLOCK"
-        # print_board(board_dict)
+        exit_hexes = EXIT_HEXES[data[COLOUR]]
+        for k in data:
+            if k == COLOUR:
+                continue
+            for hex in data[k]:
+                initial_state[tuple(hex)] = k
 
-    # TODO: Search for and output winning sequence of moves
-    # ...
+    # setup the goal state
+    goal_state = initial_state.copy()
+    for hex, occupied in goal_state.items():
+        if occupied != BLOCKS:
+            goal_state[hex] = ""
+        elif hex in exit_hexes:
+            exit_hexes.remove(hex)
 
-    # initial state: specified in the json file
-    # actions: move, jump, exit
-    # goal state: be in the opposite edge
+    goal_node = astar_search(ChexersProblem(initial_state, goal_state, exit_hexes))
+    print(goal_node)
+    node = goal_node
+    while node.state != initial_state:
+        print_board(node.state, str(node.action), True)
+        node = node.parent
 
-    # Initialise all 37 hexes
-    # hexes = [(0, 0)];
-    # for (x, y) in hexes:
-    #     hexes +=
-    #         [
-    #             (x, y + 1),
-    #             (x, y - 1),
-    #             (y + 1, x),
-    #             (y - 1, x),
-    #             (x - 1, y + 1),
-    #             (x + 1, y - 1)
-    #         ]
-    #     if len(set(hexes)) == 37:
-    #         break;
-    # hexes = set(hexes)
-    # print(hexes)
+class ChexersProblem(Problem):
+    def __init__(self, initial, goal, exit_hexes):
+        self.exit_hexes = exit_hexes
+        Problem.__init__(self, initial, goal)
 
-    romania_problem = GraphProblem('Arad', 'Bucharest', romania_map)
-    print(astar_search(romania_problem))
+    def pieces(self, state):
+        return [hex for hex, occupied in state.items() if occupied == PIECES]
 
+    """generate a list of six hexes by adding delta values"""
+    def generate_hexes(self, hex, delta_pairs):
+        return [
+            (hex[0] + delta_x, hex[1] + delta_y)
+            for delta_x, delta_y in delta_pairs
+        ]
 
-# class ChexersProblem(Problem):
+    def moveable_hexes(self, current_hex, state):
+        neighbours = self.generate_hexes(current_hex, MOVE_DELTA)
+        return [hex for hex in neighbours if hex in state and state[hex] == ""]
 
+    def jumpable_hexes(self, current_hex, state):
+        generated_hexes = self.generate_hexes(current_hex, JUMP_DELTA)
+        jumpable = []
+        for hex in generated_hexes:
+            if hex in state:
+                jumpover = tuple(map(lambda x, y: (x + y) // 2, current_hex, hex))
+                if jumpover in state and state[jumpover] != "":
+                    jumpable.append(hex)
+        return jumpable
 
+    def is_exitable(self, piece):
+        if piece in self.exit_hexes:
+            return True
+        return False
+
+    def actions(self, state):
+        possible_actions = []
+        for piece in self.pieces(state):
+            possible_actions += (
+                [(piece, MOVE, hex) for hex in self.moveable_hexes(piece, state)] +
+                [(piece, JUMP, hex) for hex in self.jumpable_hexes(piece, state)] +
+                ([(piece, EXIT)] if self.is_exitable(piece) else [])
+            )
+        return possible_actions;
+
+    def result(self, state, action):
+        new_state = state.copy()
+        # exit
+        if len(action) == 2:
+            new_state[action[0]] = ""
+        # move or jump
+        else:
+            current_hex, act, target_hex = action
+            [new_state[current_hex], new_state[target_hex]] = (
+                [new_state[target_hex], new_state[current_hex]]
+            )
+        return new_state;
+
+    def goal_test(self, state):
+        return Problem.goal_test(self, state)
+
+    def h(self, node):
+        target_hexes = self.exit_hexes
+        current_hexes = self.pieces(node.state)
+        return sum(min([euclidean_distance(hex, target)
+                for target in target_hexes]) for hex in current_hexes)
+
+def euclidean_distance(x, y):
+    return math.sqrt(sum([(a - b) ** 2 for a, b in zip(x, y)]))
 
 def print_board(board_dict, message="", debug=False, **kwargs):
     """
