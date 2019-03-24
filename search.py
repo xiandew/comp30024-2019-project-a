@@ -8,13 +8,51 @@ Authors:
 import sys
 import json
 
+from collections import defaultdict as dd
+from aima_python.search import *
+
 def main():
     with open(sys.argv[1]) as file:
         data = json.load(file)
-        print(data)
+
+        # board_dict = dd(str);
+        # for k in data:
+        #     if k == "colour":
+        #         continue;
+        #     for coor in data[k]:
+        #         board_dict[tuple(coor)] = data["colour"] if k == "pieces" else "BLOCK"
+        # print_board(board_dict)
 
     # TODO: Search for and output winning sequence of moves
     # ...
+
+    # initial state: specified in the json file
+    # actions: move, jump, exit
+    # goal state: be in the opposite edge
+
+    # Initialise all 37 hexes
+    # hexes = [(0, 0)];
+    # for (x, y) in hexes:
+    #     hexes +=
+    #         [
+    #             (x, y + 1),
+    #             (x, y - 1),
+    #             (y + 1, x),
+    #             (y - 1, x),
+    #             (x - 1, y + 1),
+    #             (x + 1, y - 1)
+    #         ]
+    #     if len(set(hexes)) == 37:
+    #         break;
+    # hexes = set(hexes)
+    # print(hexes)
+
+    romania_problem = GraphProblem('Arad', 'Bucharest', romania_map)
+    print(astar_search(romania_problem))
+
+
+# class ChexersProblem(Problem):
+
 
 
 def print_board(board_dict, message="", debug=False, **kwargs):
