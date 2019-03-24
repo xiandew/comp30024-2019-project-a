@@ -2,6 +2,9 @@
 COMP30024 Artificial Intelligence, Semester 1 2019
 Solution to Project Part A: Searching
 
+Acknowledgements: Algorithms were used directly from AIMA codes. Necessary
+modification has been made for this project.
+
 Authors:
 """
 
@@ -17,28 +20,19 @@ TOTAL_HEXES = 37
 COLOUR = "colour"
 PIECES = "pieces"
 BLOCKS = "blocks"
-MOVE = "move"
-JUMP = "jump"
-EXIT = "exit"
+MOVE = "MOVE"
+JUMP = "JUMP"
+EXIT = "EXIT"
 
 MOVE_DELTA = [(0, 1), (1, 0), (-1, 1), (0, -1), (-1, 0), (1, -1)]
 JUMP_DELTA = [(0, -2), (2, -2), (2, 0), (0, 2), (-2, 2), (-2, 0)]
 EXIT_HEXES = {
     "red": [(3, -3), (3, -2), (3, -1), (3, 0)],
+    "blue": [(0, -3), (-1, -2), (-2, -1), (-3, 0)],
+    "green":[(-3, 3), (-2, 3), (-1, 3), (0, 3)]
 }
 
 def main():
-    # test EightPuzzle. Awesome Astar search!
-    # initial_state = (7, 0, 2, 6, 5, 3, 4, 1, 8)
-    # goal_state = (1, 2, 3, 4, 0, 5, 6, 7, 8)
-    # problem = EightPuzzle(initial_state, goal_state)
-    # goal_node = astar_search(problem)
-    # node = goal_node
-    # while node.state != initial_state:
-    #     print(node.state)
-    #     node = node.parent
-    # print(node.state)
-
     # initial state: a `board_dict` with pieces and blocks specified in the json file
     # actions: move, jump, exit
     # goal test: all pieces need to be in the exit hexes and exit
@@ -71,12 +65,21 @@ def main():
         elif hex in exit_hexes:
             exit_hexes.remove(hex)
 
-    goal_node = astar_search(ChexersProblem(initial_state, goal_state, exit_hexes))
-    print(goal_node)
-    node = goal_node
+    node = astar_search(ChexersProblem(initial_state, goal_state, exit_hexes))
+    actions = []
     while node.state != initial_state:
-        print_board(node.state, str(node.action), True)
+        actions = [node.action] + actions
         node = node.parent
+
+    for action in actions:
+        operator = action[0]
+        if operator == EXIT:
+            where_from = action[1]
+            print("{} from {}.".format(operator, where_from))
+        if operator == MOVE or operator == JUMP:
+            where_from, where_to = action[1], action[2]
+            print("{} from {} to {}.".format(operator, where_from, where_to))
+
 
 class ChexersProblem(Problem):
     def __init__(self, initial, goal, exit_hexes):
@@ -114,24 +117,25 @@ class ChexersProblem(Problem):
 
     def actions(self, state):
         possible_actions = []
-        for piece in self.pieces(state):
+        for where_from in self.pieces(state):
             possible_actions += (
-                [(piece, MOVE, hex) for hex in self.moveable_hexes(piece, state)] +
-                [(piece, JUMP, hex) for hex in self.jumpable_hexes(piece, state)] +
-                ([(piece, EXIT)] if self.is_exitable(piece) else [])
+                [(MOVE, where_from, where_to) for where_to in self.moveable_hexes(where_from, state)] +
+                [(JUMP, where_from, where_to) for where_to in self.jumpable_hexes(where_from, state)] +
+                ([(EXIT, where_from)] if self.is_exitable(where_from) else [])
             )
         return possible_actions;
 
     def result(self, state, action):
         new_state = state.copy()
-        # exit
-        if len(action) == 2:
-            new_state[action[0]] = ""
-        # move or jump
-        else:
-            current_hex, act, target_hex = action
-            [new_state[current_hex], new_state[target_hex]] = (
-                [new_state[target_hex], new_state[current_hex]]
+        operator = action[0]
+
+        if operator == EXIT:
+            where_from = action[1]
+            new_state[where_from] = ""
+        if operator == MOVE or operator == JUMP:
+            where_from, where_to = action[1], action[2]
+            [new_state[where_from], new_state[where_to]] = (
+                [new_state[where_to], new_state[where_from]]
             )
         return new_state;
 
