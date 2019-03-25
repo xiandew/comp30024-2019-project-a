@@ -100,7 +100,6 @@ class Node:
         return "<Node {}>".format(self.state)
 
     def __lt__(self, node):
-        """self.state < node.state -> str(self.state) < str(node.state)"""
         return str(self.state) < str(node.state)
 
     def expand(self, problem):
@@ -271,10 +270,8 @@ def best_first_graph_search(problem, f):
         node = frontier.pop()
         if problem.goal_test(node.state):
             return node
-        """explored.add(node.state) -> explored.add(str(node.state))"""
         explored.add(str(node.state))
         for child in node.expand(problem):
-            """child.state -> str(child.state)"""
             if str(child.state) not in explored and child not in frontier:
                 frontier.append(child)
             elif child in frontier:
