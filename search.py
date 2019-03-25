@@ -5,20 +5,20 @@ Solution to Project Part A: Searching
 Acknowledgements: Algorithms were used directly from AIMA codes. Necessary
 modifications had been made for this project.
 ---
-- original:
+- ORIGINAL:
     class Node:
         ...
         def __lt__():
             return self.state < node.state
         ...
-- modified:
+- MODIFIED:
     class Node:
         ...
         def __lt__():
             return str(self.state) < str(node.state)
         ...
 ---
-- original:
+- ORIGINAL:
     def best_first_graph_search(problem, f):
         ...
             ...
@@ -28,7 +28,7 @@ modifications had been made for this project.
                 ...
             ...
         ...
-- modified:
+- MODIFIED:
     def best_first_graph_search(problem, f):
         ...
             ...
@@ -52,9 +52,7 @@ from aima_python.search import (
     Problem, astar_search
 )
 
-TOTAL_HEXES = 37
-
-# avoid typos
+# String constants to avoid typos
 COLOUR = "colour"
 PIECES = "pieces"
 BLOCKS = "blocks"
@@ -62,28 +60,30 @@ MOVE = "MOVE"
 JUMP = "JUMP"
 EXIT = "EXIT"
 
+# Delta values which give the corresponding hexes by adding them to the current hex
 MOVE_DELTA = [(0, 1), (1, 0), (-1, 1), (0, -1), (-1, 0), (1, -1)]
 JUMP_DELTA = [(0, -2), (2, -2), (2, 0), (0, 2), (-2, 2), (-2, 0)]
+
+# The exit hexes for pieces of each colour
 EXIT_HEXES = {
     "red": [(3, -3), (3, -2), (3, -1), (3, 0)],
     "blue": [(0, -3), (-1, -2), (-2, -1), (-3, 0)],
     "green":[(-3, 3), (-2, 3), (-1, 3), (0, 3)]
 }
 
+# Total number of hexes on the board
+TOTAL_HEXES = 37
+
 def main():
-    # initial state: a `board_dict` with pieces and blocks specified in the json file
-    # actions: move, jump, exit
-    # goal test: all pieces need to be in the exit hexes and exit
 
     # setup all 37 hexes
     hexes = [(0, 0)]
     for (x, y) in hexes:
+        hexes += [(x + delta_x, y + delta_y) for delta_x, delta_y in MOVE_DELTA]
         if len(set(hexes)) == TOTAL_HEXES:
             break
-        hexes += [(x + delta_x, y + delta_y)
-                    for delta_x, delta_y in MOVE_DELTA]
 
-    # setup the initial state
+    # initial state: a board_dict with pieces and blocks as specified
     initial_state = dict(zip(set(hexes), [""] * TOTAL_HEXES))
     with open(sys.argv[1]) as file:
         data = json.load(file)
@@ -95,7 +95,7 @@ def main():
             for hex in data[k]:
                 initial_state[tuple(hex)] = k
 
-    # setup the goal state
+    # goal state: a board_dict with blocks but no pieces
     goal_state = initial_state.copy()
     for hex, occupied in goal_state.items():
         if occupied != BLOCKS:
@@ -103,12 +103,16 @@ def main():
         elif hex in exit_hexes:
             exit_hexes.remove(hex)
 
+    # Search for the goal node
     node = astar_search(ChexersProblem(initial_state, goal_state, exit_hexes))
+
+    # Retrieve the actions taken to reach the goal node
     actions = []
     while node.state != initial_state:
         actions = [node.action] + actions
         node = node.parent
 
+    # Print the taken actions in specified format
     for action in actions:
         operator = action[0]
         if operator == EXIT:
@@ -120,6 +124,10 @@ def main():
 
 
 class ChexersProblem(Problem):
+    """
+    ChexersProblem class for the project. Inherits from Problem and abstract
+    methods were implemented by formulating the chexers problem.
+    """
     def __init__(self, initial, goal, exit_hexes):
         self.exit_hexes = exit_hexes
         Problem.__init__(self, initial, goal)
@@ -127,14 +135,19 @@ class ChexersProblem(Problem):
     def pieces(self, state):
         return [hex for hex, occupied in state.items() if occupied == PIECES]
 
-    """generate a list of six hexes by adding delta values"""
     def generate_hexes(self, hex, delta_pairs):
+        """
+        generate a list of six hexes by adding delta values
+        """
         return [
             (hex[0] + delta_x, hex[1] + delta_y)
             for delta_x, delta_y in delta_pairs
         ]
 
     def moveable_hexes(self, current_hex, state):
+        """
+        moveable_hexes are hexes next to the current_hex with nothing occupied
+        """
         neighbours = self.generate_hexes(current_hex, MOVE_DELTA)
         return [hex for hex in neighbours if hex in state and state[hex] == ""]
 
@@ -154,6 +167,9 @@ class ChexersProblem(Problem):
         return False
 
     def actions(self, state):
+        """
+        Possible actions include move, jump and exit.
+        """
         possible_actions = []
         for where_from in self.pieces(state):
             possible_actions += (
