@@ -56,8 +56,8 @@ from aima_python.search import (
 
 # String constants to avoid typos
 COLOUR = "colour"
-PIECES = "pieces"
-BLOCKS = "blocks"
+PIECES = "pieces"[0]
+BLOCKS = "blocks"[0]
 MOVE = "MOVE"
 JUMP = "JUMP"
 EXIT = "EXIT"
@@ -95,7 +95,8 @@ def main():
             if k == COLOUR:
                 continue
             for hex in data[k]:
-                initial_state[tuple(hex)] = k
+                initial_state[tuple(hex)] = k[0]
+    # print_board(initial_state, "initial_state", True)
 
     # goal state: a board_dict with blocks but no pieces
     goal_state = initial_state.copy()
@@ -104,6 +105,7 @@ def main():
             goal_state[hex] = ""
         elif hex in exit_hexes:
             exit_hexes.remove(hex)
+    # print_board(goal_state, "goal_state", True)
 
     # Search for the goal node
     node = astar_search(ChexersProblem(initial_state, goal_state, exit_hexes))
@@ -157,7 +159,7 @@ class ChexersProblem(Problem):
         generated_hexes = self.generate_hexes(current_hex, JUMP_DELTA)
         jumpable = []
         for hex in generated_hexes:
-            if hex in state:
+            if hex in state and state[hex] == "":
                 jumpover = tuple(map(lambda x, y: (x + y) // 2, current_hex, hex))
                 if jumpover in state and state[jumpover] != "":
                     jumpable.append(hex)
