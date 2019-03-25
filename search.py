@@ -202,9 +202,13 @@ class ChexersProblem(Problem):
 
     def h(self, node):
         target_hexes = self.exit_hexes
-        current_hexes = self.pieces(node.state)
-        return sum(min([hex_distance(hex, target)
-                for target in target_hexes]) for hex in current_hexes)
+        state_hexes = self.pieces(node.state)
+        # If the node will reach the goal, return the smallest heuristic of 0
+        if state_hexes == []:
+            return 0
+        # Plus 1 to ensure the optimal state is always the state with no pieces
+        return 1 + sum(min([hex_distance(hex, target)
+                for target in target_hexes]) for hex in state_hexes)
 
 def hex_distance(a, b):
     """
