@@ -80,8 +80,8 @@ def main():
 
     # setup all 37 hexes
     hexes = [(0, 0)]
-    for (x, y) in hexes:
-        hexes += [(x + delta_x, y + delta_y) for delta_x, delta_y in MOVE_DELTA]
+    for (q, r) in hexes:
+        hexes += [(q + delta_q, r + delta_r) for delta_q, delta_r in MOVE_DELTA]
         if len(set(hexes)) == TOTAL_HEXES:
             break
 
@@ -144,8 +144,8 @@ class ChexersProblem(Problem):
         generate a list of six hexes by adding delta values
         """
         return [
-            (hex[0] + delta_x, hex[1] + delta_y)
-            for delta_x, delta_y in delta_pairs
+            (hex[0] + delta_q, hex[1] + delta_r)
+            for delta_q, delta_r in delta_pairs
         ]
 
     def moveable_hexes(self, current_hex, state):
