@@ -10,9 +10,12 @@ Authors:
 
 import sys
 import json
+import math
 
 from collections import defaultdict as dd
-from aima_python.search import *
+from aima_python.search import (
+    Problem, astar_search
+)
 
 TOTAL_HEXES = 37
 
