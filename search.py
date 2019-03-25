@@ -2,8 +2,9 @@
 COMP30024 Artificial Intelligence, Semester 1 2019
 Solution to Project Part A: Searching
 
-Acknowledgements: Algorithms were used directly from AIMA codes. Necessary
-modifications had been made for this project.
+Acknowledgement: Search algorithms were used directly from AIMA codes.
+Source files can be found from <https://github.com/aimacode/aima-python>
+Necessary modifications had been made for this project, which as following
 ---
 - ORIGINAL:
     class Node:
@@ -46,6 +47,7 @@ Authors:
 import sys
 import json
 import math
+import time
 
 from collections import defaultdict as dd
 from aima_python.search import (
@@ -199,8 +201,20 @@ class ChexersProblem(Problem):
     def h(self, node):
         target_hexes = self.exit_hexes
         current_hexes = self.pieces(node.state)
-        return sum(min([euclidean_distance(hex, target)
+        return sum(min([hex_distance(hex, target)
                 for target in target_hexes]) for hex in current_hexes)
+
+def hex_distance(a, b):
+    """
+    Acknowledgement: This function was copied and reproduced from a JS version
+    on redblobgames website, which can be found from
+    <https://www.redblobgames.com/grids/hexagons/#distances-axial>
+
+    Calculate the hex distance for axial coordinates system.
+    """
+    return (abs(a[0] - b[0])
+          + abs(a[0] + a[1] - b[0] - b[1])
+          + abs(a[1] - b[1])) / 2
 
 def euclidean_distance(x, y):
     return math.sqrt(sum([(a - b) ** 2 for a, b in zip(x, y)]))
@@ -289,4 +303,6 @@ def print_board(board_dict, message="", debug=False, **kwargs):
 
 # when this module is executed, run the `main` function:
 if __name__ == '__main__':
+    start_time = time.time()
     main()
+    print("# --- %s seconds ---" % (time.time() - start_time))
