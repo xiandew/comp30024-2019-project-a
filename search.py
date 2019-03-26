@@ -2,7 +2,7 @@
 COMP30024 Artificial Intelligence, Semester 1 2019
 Solution to Project Part A: Searching
 
-Acknowledgement: Search algorithms were used directly from AIMA provided code.
+Acknowledgement: Search algorithms are referenced from AIMA provided code.
 Source files can be found from <https://github.com/aimacode/aima-python>
 
 Authors:
@@ -119,7 +119,7 @@ class State(dict):
     popitem     = _immutable
 
     def __hash__(self):
-        return id(self)
+        return hash(str(self))
 
     def __lt__(self, other):
         return str(self) < str(other)
