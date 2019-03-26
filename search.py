@@ -69,7 +69,11 @@ def main():
 
 def setup_initial_state(data):
     """
-    Initial state: a board_dict with pieces and blocks as specified
+    Initial state: a board_dict with pieces and blocks as specified.
+    We use the following to indicate that state of a hex.
+    - ""  (empty string): hex is not occupied;
+    - "p" ("pieces"[0] ): hex is occupied by a piece;
+    - "b" ("blocks"[0] ): hex is blocked.
     """
     initial_state = dict(zip(all_hexes(), [""] * TOTAL_HEXES))
     for occupied, hexes in data.items():
@@ -79,7 +83,7 @@ def setup_initial_state(data):
 
 def all_hexes():
     """
-    generate the coordinates of all hexes on the board
+    generate the coordinates of all hexes on the board.
     """
     hexes = [(0, 0)]
     for (q, r) in hexes:
