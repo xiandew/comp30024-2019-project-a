@@ -2,44 +2,8 @@
 COMP30024 Artificial Intelligence, Semester 1 2019
 Solution to Project Part A: Searching
 
-Acknowledgement: Search algorithms were used directly from AIMA codes.
+Acknowledgement: Search algorithms were used directly from AIMA provided code.
 Source files can be found from <https://github.com/aimacode/aima-python>
-Necessary modifications had been made for this project, which as following
----
-- ORIGINAL:
-    class Node:
-        ...
-        def __lt__():
-            return self.state < node.state
-        ...
-- MODIFIED:
-    class Node:
-        ...
-        def __lt__():
-            return str(self.state) < str(node.state)
-        ...
----
-- ORIGINAL:
-    def best_first_graph_search(problem, f):
-        ...
-            ...
-            explored.add(node.state)
-            for child in node.expand(problem):
-                if child.state not in explored and child not in frontier:
-                ...
-            ...
-        ...
-- MODIFIED:
-    def best_first_graph_search(problem, f):
-        ...
-            ...
-            explored.add(str(node.state))
-            for child in node.expand(problem):
-                if str(child.state) not in explored and child not in frontier:
-                ...
-            ...
-        ...
----
 
 Authors:
 """
@@ -77,34 +41,38 @@ EXIT_HEXES = {
 TOTAL_HEXES = 37
 
 def main():
+    with open(sys.argv[1]) as file:
+        data = json.load(file)
 
-    # setup all 37 hexes
+    # Setup all 37 hexes
     hexes = [(0, 0)]
     for (q, r) in hexes:
         hexes += [(q + delta_q, r + delta_r) for delta_q, delta_r in MOVE_DELTA]
         if len(set(hexes)) == TOTAL_HEXES:
             break
 
-    # initial state: a board_dict with pieces and blocks as specified
-    initial_state = dict(zip(set(hexes), [""] * TOTAL_HEXES))
-    with open(sys.argv[1]) as file:
-        data = json.load(file)
+    # Setup exit hexes for the given colour
+    exit_hexes = EXIT_HEXES[data[COLOUR]]
 
-        exit_hexes = EXIT_HEXES[data[COLOUR]]
-        for k in data:
-            if k == COLOUR:
-                continue
-            for hex in data[k]:
-                initial_state[tuple(hex)] = k[0]
+    # Initial state: a board_dict with pieces and blocks as specified
+    initial_state = dict(zip(set(hexes), [""] * TOTAL_HEXES))
+    for k in data:
+        if k == COLOUR:
+            continue
+        for hex in data[k]:
+            initial_state[tuple(hex)] = k[0]
+    initial_state = State(initial_state)
     # print_board(initial_state, "initial_state", True)
 
-    # goal state: a board_dict with blocks but no pieces
-    goal_state = initial_state.copy()
+    # Goal state: a board_dict with blocks but no pieces
+    goal_state = dict(initial_state)
     for hex, occupied in goal_state.items():
         if occupied != BLOCKS:
             goal_state[hex] = ""
+        # remove the exit hex if it is blocked
         elif hex in exit_hexes:
             exit_hexes.remove(hex)
+    goal_state = State(goal_state)
     # print_board(goal_state, "goal_state", True)
 
     # Search for the goal node
@@ -126,6 +94,35 @@ def main():
             where_from, where_to = action[1], action[2]
             print("{} from {} to {}.".format(operator, where_from, where_to))
 
+class State(dict):
+    """
+    State class inherits from built-in dict. Make it immutable, hashable and
+    comparable for compatible with the referenced search algorithms from AIMA.
+
+    It is used to store a state of the board which is defined by all hexes on
+    the board and their corresponding states (whether the hex is empty, blocked
+    or occupied by a piece).
+
+    Acknowledgement: This code is referenced from official python developer's
+    guide <https://www.python.org/dev/peps/pep-0351/#sample-implementations>
+    """
+
+    def _immutable(self, *args, **kws):
+        raise TypeError('state is immutable')
+
+    __setitem__ = _immutable
+    __delitem__ = _immutable
+    clear       = _immutable
+    update      = _immutable
+    setdefault  = _immutable
+    pop         = _immutable
+    popitem     = _immutable
+
+    def __hash__(self):
+        return id(self)
+
+    def __lt__(self, other):
+        return str(self) < str(other)
 
 class ChexersProblem(Problem):
     """
@@ -184,9 +181,10 @@ class ChexersProblem(Problem):
         return possible_actions;
 
     def result(self, state, action):
-        new_state = state.copy()
-        operator = action[0]
+        new_state = dict(state)
 
+        # update the new state by the action
+        operator = action[0]
         if operator == EXIT:
             where_from = action[1]
             new_state[where_from] = ""
@@ -195,7 +193,7 @@ class ChexersProblem(Problem):
             [new_state[where_from], new_state[where_to]] = (
                 [new_state[where_to], new_state[where_from]]
             )
-        return new_state;
+        return State(new_state);
 
     def goal_test(self, state):
         return Problem.goal_test(self, state)
