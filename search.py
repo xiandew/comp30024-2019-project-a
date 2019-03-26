@@ -18,6 +18,8 @@ from aima_python.search import (
     Problem, astar_search
 )
 
+#-------------------------------------------------------------------------------
+
 # String constants to avoid typos
 COLOUR = "colour"
 PIECES = "pieces"[0]
@@ -40,51 +42,82 @@ EXIT_HEXES = {
 # Total number of hexes on the board
 TOTAL_HEXES = 37
 
+#-------------------------------------------------------------------------------
+
 def main():
     with open(sys.argv[1]) as file:
         data = json.load(file)
 
-    # Setup all 37 hexes
+    # get the colour of pieces
+    piece_colour = data.pop(COLOUR)
+
+    # setup the initial state
+    initial_state = setup_initial_state(data)
+
+    # setup the goal state
+    goal_state = setup_goal_state(initial_state)
+
+    # setup the exit hexes
+    exit_hexes = setup_exit_hexes(piece_colour, goal_state)
+
+    # Search for the goal node
+    goal_node = astar_search(ChexersProblem(initial_state, goal_state, exit_hexes))
+
+    print_actions(goal_node, initial_state)
+
+#-------------------------------------------------------------------------------
+
+def setup_initial_state(data):
+    """
+    Initial state: a board_dict with pieces and blocks as specified
+    """
+    initial_state = dict(zip(all_hexes(), [""] * TOTAL_HEXES))
+    for occupied, hexes in data.items():
+        for hex in hexes:
+            initial_state[tuple(hex)] = occupied[0]
+    return State(initial_state)
+
+def all_hexes():
+    """
+    generate the coordinates of all hexes on the board
+    """
     hexes = [(0, 0)]
     for (q, r) in hexes:
         hexes += [(q + delta_q, r + delta_r) for delta_q, delta_r in MOVE_DELTA]
         if len(set(hexes)) == TOTAL_HEXES:
             break
+    return set(hexes)
 
-    # Setup exit hexes for the given colour
-    exit_hexes = EXIT_HEXES[data[COLOUR]]
-
-    # Initial state: a board_dict with pieces and blocks as specified
-    initial_state = dict(zip(set(hexes), [""] * TOTAL_HEXES))
-    for k in data:
-        if k == COLOUR:
-            continue
-        for hex in data[k]:
-            initial_state[tuple(hex)] = k[0]
-    initial_state = State(initial_state)
-    # print_board(initial_state, "initial_state", True)
-
-    # Goal state: a board_dict with blocks but no pieces
+def setup_goal_state(initial_state):
+    """
+    Goal state: a board_dict with blocks but no pieces
+    """
     goal_state = dict(initial_state)
     for hex, occupied in goal_state.items():
         if occupied != BLOCKS:
             goal_state[hex] = ""
-        # remove the exit hex if it is blocked
-        elif hex in exit_hexes:
-            exit_hexes.remove(hex)
-    goal_state = State(goal_state)
-    # print_board(goal_state, "goal_state", True)
+    return State(goal_state)
 
-    # Search for the goal node
-    node = astar_search(ChexersProblem(initial_state, goal_state, exit_hexes))
+def setup_exit_hexes(piece_colour, goal_state):
+    """
+    Return the exit hexes for given colour with no blocked hexes
+    """
+    return (
+        set(EXIT_HEXES[piece_colour]) -
+        set([hex for hex, occupied in goal_state.items() if occupied == BLOCKS])
+    )
 
-    # Retrieve the actions taken to reach the goal node
+def print_actions(goal_node, initial_state):
+    """
+    Retrieve the actions taken to reach the goal node and print them
+    in the specified format
+    """
     actions = []
+    node = goal_node
     while node.state != initial_state:
         actions = [node.action] + actions
         node = node.parent
 
-    # Print the taken actions in specified format
     for action in actions:
         operator = action[0]
         if operator == EXIT:
@@ -93,6 +126,8 @@ def main():
         if operator == MOVE or operator == JUMP:
             where_from, where_to = action[1], action[2]
             print("{} from {} to {}.".format(operator, where_from, where_to))
+
+#-------------------------------------------------------------------------------
 
 class State(dict):
     """
@@ -123,6 +158,8 @@ class State(dict):
 
     def __lt__(self, other):
         return str(self) < str(other)
+
+#-------------------------------------------------------------------------------
 
 class ChexersProblem(Problem):
     """
@@ -208,6 +245,8 @@ class ChexersProblem(Problem):
         return 1 + sum(min([hex_distance(hex, target)
                 for target in target_hexes]) for hex in state_hexes)
 
+#-------------------------------------------------------------------------------
+
 def hex_distance(a, b):
     """
     Acknowledgement: This function was copied and reproduced from a JS version
@@ -222,6 +261,8 @@ def hex_distance(a, b):
 
 def euclidean_distance(x, y):
     return math.sqrt(sum([(a - b) ** 2 for a, b in zip(x, y)]))
+
+#-------------------------------------------------------------------------------
 
 def print_board(board_dict, message="", debug=False, **kwargs):
     """
