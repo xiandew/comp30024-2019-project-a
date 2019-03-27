@@ -62,7 +62,7 @@ def main():
     # Search for the goal node
     goal_node = astar_search(ChexersProblem(initial_state, goal_state, exit_cells))
 
-    print_actions(goal_node, initial_state)
+    print_actions(goal_node)
 
 # -------------------------------------------------------------------------------
 
@@ -106,18 +106,15 @@ def setup_goal_state(initial_state):
     return State(goal_state)
 
 
-def print_actions(goal_node, initial_state):
+def print_actions(goal_node):
     """
-    Retrieve the actions taken to reach the goal node and print them
-    in the specified format
+    Print the actions taken to reach the goal node in the specified format
     """
-    actions = []
-    node = goal_node
-    while node.state != initial_state:
-        actions = [node.action] + actions
-        node = node.parent
 
-    for action in actions:
+    for path in goal_node.path():
+        action = path.action
+        if not action:
+            continue
         operator = action[0]
         if operator == EXIT:
             where_from = action[1]
@@ -231,7 +228,7 @@ class ChexersProblem(Problem):
         target_cells = self.exit_cells
         piece_cells = get_pieces(node.state)
         # If the node will reach the goal, return the smallest heuristic of 0
-        if piece_cells == []:
+        if not piece_cells:
             return 0
         # Plus 1 to ensure the optimal state is always the state with no pieces
         return 1 + sum(min([hex_distance(cell, target)
@@ -258,7 +255,7 @@ def hex_distance(a, b):
     on redblobgames website, which can be found from
     <https://www.redblobgames.com/grids/cellagons/#distances-axial>
 
-    Calculate the cell distance for axial coordinates system.
+    Calculate the hex distance for axial coordinates system.
     """
     return (abs(a[0] - b[0])
           + abs(a[0] + a[1] - b[0] - b[1])
