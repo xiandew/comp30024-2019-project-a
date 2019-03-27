@@ -56,7 +56,8 @@ def main():
     goal_state = setup_goal_state(initial_state)
 
     # setup the exit cells for given colour with blocked cells removed
-    exit_cells = set(EXIT_CELLS[piece_colour]) - set([tuple(cell) for cell in data[BLOCKS]])
+    exit_cells = (set(EXIT_CELLS[data[COLOUR]]) -
+                    set([tuple(cell) for cell in data[BLOCKS]]))
 
     # Search for the goal node
     goal_node = astar_search(ChexersProblem(initial_state, goal_state, exit_cells))
