@@ -13,12 +13,12 @@ import json
 import math
 import time
 
-from collections import defaultdict as dd
+
 from aima_python.search import (
     Problem, astar_search
 )
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 # String constants to avoid typos
 COLOUR = "colour"
@@ -28,21 +28,22 @@ MOVE = "MOVE"
 JUMP = "JUMP"
 EXIT = "EXIT"
 
-# Delta values which give the corresponding hexes by adding them to the current hex
+# Delta values which give the corresponding cells by adding them to the current cell
 MOVE_DELTA = [(0, 1), (1, 0), (-1, 1), (0, -1), (-1, 0), (1, -1)]
 JUMP_DELTA = [(0, -2), (2, -2), (2, 0), (0, 2), (-2, 2), (-2, 0)]
 
-# The exit hexes for pieces of each colour
-EXIT_HEXES = {
+# The exit cells for pieces of each colour
+EXIT_CELLS = {
     "red": [(3, -3), (3, -2), (3, -1), (3, 0)],
     "blue": [(0, -3), (-1, -2), (-2, -1), (-3, 0)],
     "green":[(-3, 3), (-2, 3), (-1, 3), (0, 3)]
 }
 
-# Total number of hexes on the board
-TOTAL_HEXES = 37
+# Total number of cells on the board
+TOTAL_CELLS = 37
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
+
 
 def main():
     with open(sys.argv[1]) as file:
@@ -57,59 +58,64 @@ def main():
     # setup the goal state
     goal_state = setup_goal_state(initial_state)
 
-    # setup the exit hexes
-    exit_hexes = setup_exit_hexes(piece_colour, goal_state)
+    # setup the exit cells
+    exit_cells = setup_exit_cells(piece_colour, goal_state)
 
     # Search for the goal node
-    goal_node = astar_search(ChexersProblem(initial_state, goal_state, exit_hexes))
+    goal_node = astar_search(ChexersProblem(initial_state, goal_state, exit_cells))
 
     print_actions(goal_node, initial_state)
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
+
 
 def setup_initial_state(data):
     """
     Initial state: a board_dict with pieces and blocks as specified.
-    We use the following to indicate that state of a hex.
-    - "": hex is not occupied;
-    - "pieces": hex is occupied by a piece;
-    - "blocks": hex is blocked.
+    We use the following to indicate that state of a cell.
+    - "": cell is not occupied;
+    - "pieces": cell is occupied by a piece;
+    - "blocks": cell is blocked.
     """
-    initial_state = dict(zip(all_hexes(), [""] * TOTAL_HEXES))
-    for occupied, hexes in data.items():
-        for hex in hexes:
-            initial_state[tuple(hex)] = occupied
+    initial_state = dict(zip(all_cells(), [""] * TOTAL_CELLS))
+    for occupied, cells in data.items():
+        for cell in cells:
+            initial_state[tuple(cell)] = occupied
     return State(initial_state)
 
-def all_hexes():
+
+def all_cells():
     """
-    generate the coordinates of all hexes on the board.
+    generate the coordinates of all cells on the board.
     """
-    hexes = [(0, 0)]
-    for (q, r) in hexes:
-        hexes += [(q + delta_q, r + delta_r) for delta_q, delta_r in MOVE_DELTA]
-        if len(set(hexes)) == TOTAL_HEXES:
+    cells = [(0, 0)]
+    for (q, r) in cells:
+        cells += [(q + delta_q, r + delta_r) for delta_q, delta_r in MOVE_DELTA]
+        if len(set(cells)) == TOTAL_CELLS:
             break
-    return set(hexes)
+    return set(cells)
+
 
 def setup_goal_state(initial_state):
     """
     Goal state: a board_dict with blocks but no pieces
     """
     goal_state = dict(initial_state)
-    for hex, occupied in goal_state.items():
+    for cell, occupied in goal_state.items():
         if occupied != BLOCKS:
-            goal_state[hex] = ""
+            goal_state[cell] = ""
     return State(goal_state)
 
-def setup_exit_hexes(piece_colour, goal_state):
+
+def setup_exit_cells(piece_colour, goal_state):
     """
-    Return the exit hexes for given colour with no blocked hexes
+    Return the exit cells for given colour with no blocked cells
     """
     return (
-        set(EXIT_HEXES[piece_colour]) -
-        set([hex for hex, occupied in goal_state.items() if occupied == BLOCKS])
+        set(EXIT_CELLS[piece_colour]) -
+        set([cell for cell, occupied in goal_state.items() if occupied == BLOCKS])
     )
+
 
 def print_actions(goal_node, initial_state):
     """
@@ -131,15 +137,16 @@ def print_actions(goal_node, initial_state):
             where_from, where_to = action[1], action[2]
             print("{} from {} to {}.".format(operator, where_from, where_to))
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
+
 
 class State(dict):
     """
     State class inherits from built-in dict. Make it immutable, hashable and
     comparable for compatible with the referenced search algorithms from AIMA.
 
-    It is used to store a state of the board which is defined by all hexes on
-    the board and their corresponding states (whether the hex is empty, blocked
+    It is used to store a state of the board which is defined by all cells on
+    the board and their corresponding states (whether the cell is empty, blocked
     or occupied by a piece).
 
     Acknowledgement: This code is referenced from official python developer's
@@ -163,48 +170,54 @@ class State(dict):
     def __lt__(self, other):
         return str(self) < str(other)
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
+
+
+def pieces(state):
+    return [cell for cell, occupied in state.items() if occupied == PIECES]
+
+
+def generate_cells(cell, delta_pairs):
+    """
+    generate a list of six cells by adding delta values
+    """
+    return [
+        (cell[0] + delta_q, cell[1] + delta_r)
+        for delta_q, delta_r in delta_pairs]       
+
 
 class ChexersProblem(Problem):
     """
     ChexersProblem class for the project. Inherits from Problem and abstract
     methods were implemented by formulating the chexers problem.
     """
-    def __init__(self, initial, goal, exit_hexes):
-        self.exit_hexes = exit_hexes
+    def __init__(self, initial, goal, exit_cells):
+        self.exit_cells = exit_cells
         Problem.__init__(self, initial, goal)
 
-    def pieces(self, state):
-        return [hex for hex, occupied in state.items() if occupied == PIECES]
 
-    def generate_hexes(self, hex, delta_pairs):
-        """
-        generate a list of six hexes by adding delta values
-        """
-        return [
-            (hex[0] + delta_q, hex[1] + delta_r)
-            for delta_q, delta_r in delta_pairs
-        ]
 
-    def moveable_hexes(self, current_hex, state):
-        """
-        moveable_hexes are hexes next to the current_hex with nothing occupied
-        """
-        neighbours = self.generate_hexes(current_hex, MOVE_DELTA)
-        return [hex for hex in neighbours if hex in state and state[hex] == ""]
+    
 
-    def jumpable_hexes(self, current_hex, state):
-        generated_hexes = self.generate_hexes(current_hex, JUMP_DELTA)
+    def moveable_cells(self, current_cell, state):
+        """
+        moveable_cells are cells next to the current_cell with nothing occupied
+        """
+        neighbours = generate_cells(current_cell, MOVE_DELTA)
+        return [cell for cell in neighbours if cell in state and state[cell] == ""]
+
+    def jumpable_cells(self, current_cell, state):
+        generated_cells = generate_cells(current_cell, JUMP_DELTA)
         jumpable = []
-        for hex in generated_hexes:
-            if hex in state and state[hex] == "":
-                jumpover = tuple(map(lambda x, y: (x + y) // 2, current_hex, hex))
+        for cell in generated_cells:
+            if cell in state and state[cell] == "":
+                jumpover = tuple(map(lambda x, y: (x + y) // 2, current_cell, cell))
                 if jumpover in state and state[jumpover] != "":
-                    jumpable.append(hex)
+                    jumpable.append(cell)
         return jumpable
 
     def is_exitable(self, piece):
-        if piece in self.exit_hexes:
+        if piece in self.exit_cells:
             return True
         return False
 
@@ -213,10 +226,10 @@ class ChexersProblem(Problem):
         Possible actions include move, jump and exit.
         """
         possible_actions = []
-        for where_from in self.pieces(state):
+        for where_from in pieces(state):
             possible_actions += (
-                [(MOVE, where_from, where_to) for where_to in self.moveable_hexes(where_from, state)] +
-                [(JUMP, where_from, where_to) for where_to in self.jumpable_hexes(where_from, state)] +
+                [(MOVE, where_from, where_to) for where_to in self.moveable_cells(where_from, state)] +
+                [(JUMP, where_from, where_to) for where_to in self.jumpable_cells(where_from, state)] +
                 ([(EXIT, where_from)] if self.is_exitable(where_from) else [])
             )
         return possible_actions;
@@ -240,42 +253,45 @@ class ChexersProblem(Problem):
         return Problem.goal_test(self, state)
 
     def h(self, node):
-        target_hexes = self.exit_hexes
-        state_hexes = self.pieces(node.state)
+        target_cells = self.exit_cells
+        state_cells = pieces(node.state)
         # If the node will reach the goal, return the smallest heuristic of 0
-        if state_hexes == []:
+        if state_cells == []:
             return 0
         # Plus 1 to ensure the optimal state is always the state with no pieces
-        return 1 + sum(min([hex_distance(hex, target)
-                for target in target_hexes]) for hex in state_hexes)
+        return 1 + sum(min([hex_distance(cell, target)
+                for target in target_cells]) for cell in state_cells)
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
+
 
 def hex_distance(a, b):
     """
     Acknowledgement: This function was copied and reproduced from a JS version
     on redblobgames website, which can be found from
-    <https://www.redblobgames.com/grids/hexagons/#distances-axial>
+    <https://www.redblobgames.com/grids/cellagons/#distances-axial>
 
-    Calculate the hex distance for axial coordinates system.
+    Calculate the cell distance for axial coordinates system.
     """
     return (abs(a[0] - b[0])
           + abs(a[0] + a[1] - b[0] - b[1])
           + abs(a[1] - b[1])) / 2
 
+
 def euclidean_distance(x, y):
     return math.sqrt(sum([(a - b) ** 2 for a, b in zip(x, y)]))
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
+
 
 def print_board(board_dict, message="", debug=False, **kwargs):
     """
-    Helper function to print a drawing of a hexagonal board's contents.
+    Helper function to print a drawing of a cellagonal board's contents.
 
     Arguments:
 
     * `board_dict` -- dictionary with tuples for keys and anything printable
-    for values. The tuple keys are interpreted as hexagonal coordinates (using
+    for values. The tuple keys are interpreted as cellagonal coordinates (using
     the axial coordinate system outlined in the project specification) and the
     values are formatted as strings and placed in the drawing at the corres-
     ponding location (only the first 5 characters of each string are used, to
@@ -286,7 +302,7 @@ def print_board(board_dict, message="", debug=False, **kwargs):
     * `message` -- an optional message to include on the first line of the
     drawing (above the board) -- default `""` (resulting in a blank message).
     * `debug` -- for a larger board drawing that includes the coordinates
-    inside each hex, set this to `True` -- default `False`.
+    inside each cell, set this to `True` -- default `False`.
     * Or, any other keyword arguments! They will be forwarded to `print()`.
     """
 
@@ -338,7 +354,7 @@ def print_board(board_dict, message="", debug=False, **kwargs):
     # prepare the provided board contents as strings, formatted to size.
     ran = range(-3, +3+1)
     cells = []
-    for qr in [(q,r) for q in ran for r in ran if -q-r in ran]:
+    for qr in [(q, r) for q in ran for r in ran if -q-r in ran]:
         if qr in board_dict:
             cell = str(board_dict[qr]).center(5)
         else:
