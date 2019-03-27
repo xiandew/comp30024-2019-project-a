@@ -49,17 +49,14 @@ def main():
     with open(sys.argv[1]) as file:
         data = json.load(file)
 
-    # get the colour of pieces
-    piece_colour = data.pop(COLOUR)
-
     # setup the initial state
     initial_state = setup_initial_state(data)
 
     # setup the goal state
     goal_state = setup_goal_state(initial_state)
 
-    # setup the exit cells
-    exit_cells = setup_exit_cells(piece_colour, goal_state)
+    # setup the exit cells for given colour with blocked cells removed
+    exit_cells = set(EXIT_CELLS[piece_colour]) - set([tuple(cell) for cell in data[BLOCKS]])
 
     # Search for the goal node
     goal_node = astar_search(ChexersProblem(initial_state, goal_state, exit_cells))
@@ -78,9 +75,10 @@ def setup_initial_state(data):
     - "blocks": cell is blocked.
     """
     initial_state = dict(zip(all_cells(), [""] * TOTAL_CELLS))
-    for occupied, cells in data.items():
-        for cell in cells:
-            initial_state[tuple(cell)] = occupied
+    for cell in data[PIECES]:
+        initial_state[tuple(cell)] = PIECES
+    for cell in data[BLOCKS]:
+        initial_state[tuple(cell)] = BLOCKS
     return State(initial_state)
 
 
@@ -105,16 +103,6 @@ def setup_goal_state(initial_state):
         if occupied != BLOCKS:
             goal_state[cell] = ""
     return State(goal_state)
-
-
-def setup_exit_cells(piece_colour, goal_state):
-    """
-    Return the exit cells for given colour with no blocked cells
-    """
-    return (
-        set(EXIT_CELLS[piece_colour]) -
-        set([cell for cell, occupied in goal_state.items() if occupied == BLOCKS])
-    )
 
 
 def print_actions(goal_node, initial_state):
@@ -173,31 +161,14 @@ class State(dict):
 # -------------------------------------------------------------------------------
 
 
-def pieces(state):
-    return [cell for cell, occupied in state.items() if occupied == PIECES]
-
-
-def generate_cells(cell, delta_pairs):
-    """
-    generate a list of six cells by adding delta values
-    """
-    return [
-        (cell[0] + delta_q, cell[1] + delta_r)
-        for delta_q, delta_r in delta_pairs]       
-
-
 class ChexersProblem(Problem):
     """
     ChexersProblem class for the project. Inherits from Problem and abstract
-    methods were implemented by formulating the chexers problem.
+    methods were implemented by formulating the chexers.
     """
     def __init__(self, initial, goal, exit_cells):
         self.exit_cells = exit_cells
         Problem.__init__(self, initial, goal)
-
-
-
-    
 
     def moveable_cells(self, current_cell, state):
         """
@@ -226,11 +197,14 @@ class ChexersProblem(Problem):
         Possible actions include move, jump and exit.
         """
         possible_actions = []
-        for where_from in pieces(state):
+        for where_from in get_pieces(state):
             possible_actions += (
-                [(MOVE, where_from, where_to) for where_to in self.moveable_cells(where_from, state)] +
-                [(JUMP, where_from, where_to) for where_to in self.jumpable_cells(where_from, state)] +
-                ([(EXIT, where_from)] if self.is_exitable(where_from) else [])
+                [(MOVE, where_from, where_to)
+                    for where_to in self.moveable_cells(where_from, state)]
+              + [(JUMP, where_from, where_to)
+                    for where_to in self.jumpable_cells(where_from, state)]
+              + ([(EXIT, where_from)]
+                    if self.is_exitable(where_from) else [])
             )
         return possible_actions;
 
@@ -254,13 +228,25 @@ class ChexersProblem(Problem):
 
     def h(self, node):
         target_cells = self.exit_cells
-        state_cells = pieces(node.state)
+        piece_cells = get_pieces(node.state)
         # If the node will reach the goal, return the smallest heuristic of 0
-        if state_cells == []:
+        if piece_cells == []:
             return 0
         # Plus 1 to ensure the optimal state is always the state with no pieces
         return 1 + sum(min([hex_distance(cell, target)
-                for target in target_cells]) for cell in state_cells)
+                for target in target_cells]) for cell in piece_cells)
+
+
+def get_pieces(state):
+    return [cell for cell, occupied in state.items() if occupied == PIECES]
+
+
+def generate_cells(cell, delta_pairs):
+    """
+    generate a list of six cells by adding delta values
+    """
+    return [(cell[0] + delta_q, cell[1] + delta_r)
+                for delta_q, delta_r in delta_pairs]
 
 # -------------------------------------------------------------------------------
 
