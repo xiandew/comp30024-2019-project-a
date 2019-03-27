@@ -22,8 +22,8 @@ from aima_python.search import (
 
 # String constants to avoid typos
 COLOUR = "colour"
-PIECES = "pieces"[0]
-BLOCKS = "blocks"[0]
+PIECES = "pieces"
+BLOCKS = "blocks"
 MOVE = "MOVE"
 JUMP = "JUMP"
 EXIT = "EXIT"
@@ -71,14 +71,14 @@ def setup_initial_state(data):
     """
     Initial state: a board_dict with pieces and blocks as specified.
     We use the following to indicate that state of a hex.
-    - ""  (empty string): hex is not occupied;
-    - "p" ("pieces"[0] ): hex is occupied by a piece;
-    - "b" ("blocks"[0] ): hex is blocked.
+    - "": hex is not occupied;
+    - "pieces": hex is occupied by a piece;
+    - "blocks": hex is blocked.
     """
     initial_state = dict(zip(all_hexes(), [""] * TOTAL_HEXES))
     for occupied, hexes in data.items():
         for hex in hexes:
-            initial_state[tuple(hex)] = occupied[0]
+            initial_state[tuple(hex)] = occupied
     return State(initial_state)
 
 def all_hexes():
