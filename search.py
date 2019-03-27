@@ -42,6 +42,12 @@ EXIT_CELLS = {
 # Total number of cells on the board
 TOTAL_CELLS = 37
 
+PATH_COSTS = {
+    MOVE: 2,
+    JUMP: 1,
+    EXIT: 0
+}
+
 # -------------------------------------------------------------------------------
 
 
@@ -223,6 +229,9 @@ class ChexersProblem(Problem):
 
     def goal_test(self, state):
         return Problem.goal_test(self, state)
+
+    def path_cost(self, c, state1, action, state2):
+        return c + PATH_COSTS[action[0]]
 
     def h(self, node):
         target_cells = self.exit_cells
