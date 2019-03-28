@@ -10,7 +10,6 @@ Authors:
 
 import sys
 import json
-import math
 import time
 
 from chexersProblem import ChexersProblem

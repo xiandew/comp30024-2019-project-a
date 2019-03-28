@@ -1,5 +1,6 @@
 from aima_python.search import Problem
 from state import State
+import math
 
 # String constants to avoid typos
 BLOCKS = "blocks"
@@ -27,6 +28,7 @@ PATH_COSTS = {
     EXIT: 0
 }
 
+
 class ChexersProblem(Problem):
     """
     ChexersProblem class for the project. Inherits from Problem and abstract
@@ -40,8 +42,8 @@ class ChexersProblem(Problem):
 
         # Setup the exit cells for given colour with blocked cells removed
         self.exit_cells = (set(EXIT_CELLS[self.piece_colour]) -
-                            set([cell for cell, occupied in self.goal.items()
-                                            if occupied == BLOCKS]))
+                           set([cell for cell, occupied in self.goal.items()
+                                if occupied == BLOCKS]))
 
     def is_exitable(self, piece):
         if piece in self.exit_cells:
@@ -53,14 +55,13 @@ class ChexersProblem(Problem):
         Possible actions include move, jump and exit.
         """
         possible_actions = []
-        for where_from in self.get_pieces(state):
+        for curr_cell in self.get_pieces(state):
             possible_actions += (
-                [(MOVE, where_from, where_to)
-                    for where_to in moveable_cells(where_from, state)]
-              + [(JUMP, where_from, where_to)
-                    for where_to in jumpable_cells(where_from, state)]
-              + ([(EXIT, where_from)]
-                    if self.is_exitable(where_from) else [])
+                [(MOVE, curr_cell, next_cell)
+                    for next_cell in moveable_cells(curr_cell, state)] +
+                [(JUMP, curr_cell, next_cell)
+                    for next_cell in jumpable_cells(curr_cell, state)] +
+                ([(EXIT, curr_cell)] if self.is_exitable(curr_cell) else [])
             )
         return possible_actions
 
@@ -69,7 +70,7 @@ class ChexersProblem(Problem):
         Return cells of pieces in current state
         """
         return [cell for cell, occupied in state.items()
-                                if occupied == self.piece_colour]
+                if occupied == self.piece_colour]
 
     def result(self, state, action):
         new_state = dict(state)
@@ -79,13 +80,13 @@ class ChexersProblem(Problem):
         # Exit action will result one piece disappear and leave the exit cell
         # empty
         if operator == EXIT:
-            where_from = action[1]
-            new_state[where_from] = ""
+            curr_cell = action[1]
+            new_state[curr_cell] = ""
         # Move or jump action will exchange the states of two cells
         if operator == MOVE or operator == JUMP:
-            where_from, where_to = action[1], action[2]
-            [new_state[where_from], new_state[where_to]] = (
-                [new_state[where_to], new_state[where_from]])
+            curr_cell, next_cell = action[1], action[2]
+            [new_state[curr_cell], new_state[next_cell]] = (
+                [new_state[next_cell], new_state[curr_cell]])
         return State(new_state)
 
     def goal_test(self, state):
@@ -106,7 +107,7 @@ class ChexersProblem(Problem):
         # reaches one of the exit cells, it still needs 1 step to exit the
         # board.
         return sum(min([1 + hex_distance(cell, target)
-                for target in target_cells]) for cell in piece_cells)
+                        for target in target_cells]) for cell in piece_cells)
 
 
 def generate_cells(cell, delta_pairs):
@@ -114,7 +115,7 @@ def generate_cells(cell, delta_pairs):
     generate a list of six cells by adding delta values
     """
     return [(cell[0] + delta_q, cell[1] + delta_r)
-                for delta_q, delta_r in delta_pairs]
+            for delta_q, delta_r in delta_pairs]
 
 
 def moveable_cells(current_cell, state):
