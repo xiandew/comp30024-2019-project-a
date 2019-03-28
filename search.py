@@ -42,6 +42,7 @@ EXIT_CELLS = {
 # Total number of cells on the board
 TOTAL_CELLS = 37
 
+# Path costs of three actions, which will set the algorithm's preferrence of each action
 PATH_COSTS = {
     MOVE: 2,
     JUMP: 1,
@@ -182,6 +183,10 @@ class ChexersProblem(Problem):
         return [cell for cell in neighbours if cell in state and state[cell] == ""]
 
     def jumpable_cells(self, current_cell, state):
+        """
+        jumpable_cells are cells that are one cell apart from the current cell
+        and cells in the middle must be occupied by either blocks or pieces
+        """
         generated_cells = generate_cells(current_cell, JUMP_DELTA)
         jumpable = []
         for cell in generated_cells:
@@ -217,14 +222,15 @@ class ChexersProblem(Problem):
 
         # update the new state by the action
         operator = action[0]
+        # Exit action will result one piece disappear and leave the exit cell empty
         if operator == EXIT:
             where_from = action[1]
             new_state[where_from] = ""
+        # Move or jump action will exchange the states of two cells
         if operator == MOVE or operator == JUMP:
             where_from, where_to = action[1], action[2]
             [new_state[where_from], new_state[where_to]] = (
-                [new_state[where_to], new_state[where_from]]
-            )
+                [new_state[where_to], new_state[where_from]])
         return State(new_state);
 
     def goal_test(self, state):
