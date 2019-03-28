@@ -54,13 +54,15 @@ class ChexersProblem(Problem):
         """
         possible_actions = []
         for curr_cell in self.get_pieces(state):
-            possible_actions += (
-                [(MOVE, curr_cell, next_cell)
-                    for next_cell in moveable_cells(curr_cell, state)] +
-                [(JUMP, curr_cell, next_cell)
-                    for next_cell in jumpable_cells(curr_cell, state)] +
-                ([(EXIT, curr_cell)] if self.is_exitable(curr_cell) else [])
-            )
+            # Move actions
+            for next_cell in moveable_cells(curr_cell, state):
+                possible_actions += [(MOVE, curr_cell, next_cell)]
+            # Jump actions
+            for next_cell in jumpable_cells(curr_cell, state):
+                possible_actions += [(JUMP, curr_cell, next_cell)]
+            # Exit actions
+            if self.is_exitable(curr_cell):
+                possible_actions += [(EXIT, curr_cell)]
         return possible_actions
 
     def get_pieces(self, state):
