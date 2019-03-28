@@ -28,6 +28,10 @@ MOVE = "MOVE"
 JUMP = "JUMP"
 EXIT = "EXIT"
 
+# The minimum and maximum coordinates on the q and r axes
+MIN_COORDINATE = -3
+MAX_COORDINATE = 3
+
 # Delta values which give the corresponding cells by adding them to the current
 # cell
 MOVE_DELTA = [(0, 1), (1, 0), (-1, 1), (0, -1), (-1, 0), (1, -1)]
@@ -97,12 +101,10 @@ def all_cells():
     """
     generate the coordinates of all cells on the board.
     """
-    cells = [(0, 0)]
-    for (q, r) in cells:
-        cells += [(q + delta_q, r + delta_r) for delta_q, delta_r in
-                  MOVE_DELTA]
-        if len(set(cells)) == TOTAL_CELLS:
-            break
+    cells = []
+    ran = range(MIN_COORDINATE, MAX_COORDINATE + 1)
+    for qr in [(q, r) for q in ran for r in ran if -q-r in ran]:
+        cells.append(qr)
     return set(cells)
 
 
@@ -356,7 +358,7 @@ def print_board(board_dict, message="", debug=False, **kwargs):
 #              `-._,-' `-._,-' `-._,-' `-._,-'     `-._,-'"""
 
     # prepare the provided board contents as strings, formatted to size.
-    ran = range(-3, +3+1)
+    ran = range(MIN_COORDINATE, MAX_COORDINATE+1)
     cells = []
     for qr in [(q, r) for q in ran for r in ran if -q-r in ran]:
         if qr in board_dict:
