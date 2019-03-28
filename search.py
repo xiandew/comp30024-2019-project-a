@@ -178,27 +178,6 @@ class ChexersProblem(Problem):
         self.exit_cells = exit_cells
         Problem.__init__(self, initial, goal)
 
-    def moveable_cells(self, current_cell, state):
-        """
-        moveable_cells are cells next to the current_cell with nothing occupied
-        """
-        neighbours = generate_cells(current_cell, MOVE_DELTA)
-        return [cell for cell in neighbours if cell in state and state[cell] == ""]
-
-    def jumpable_cells(self, current_cell, state):
-        """
-        jumpable_cells are cells that are one cell apart from the current cell
-        and cells in the middle must be occupied by either blocks or pieces
-        """
-        generated_cells = generate_cells(current_cell, JUMP_DELTA)
-        jumpable = []
-        for cell in generated_cells:
-            if cell in state and state[cell] == "":
-                jumpover = tuple(map(lambda x, y: (x + y) // 2, current_cell, cell))
-                if jumpover in state and state[jumpover] != "":
-                    jumpable.append(cell)
-        return jumpable
-
     def is_exitable(self, piece):
         if piece in self.exit_cells:
             return True
@@ -212,9 +191,9 @@ class ChexersProblem(Problem):
         for where_from in get_pieces(state):
             possible_actions += (
                 [(MOVE, where_from, where_to)
-                    for where_to in self.moveable_cells(where_from, state)]
+                    for where_to in moveable_cells(where_from, state)]
               + [(JUMP, where_from, where_to)
-                    for where_to in self.jumpable_cells(where_from, state)]
+                    for where_to in jumpable_cells(where_from, state)]
               + ([(EXIT, where_from)]
                     if self.is_exitable(where_from) else [])
             )
@@ -252,7 +231,8 @@ class ChexersProblem(Problem):
             return 0
         # Otherwise, the heuristic is the sum of [the minimum distance of each
         # piece to the exit cells + 1]. Plus 1 means that when each piece
-        # reaches one of the exit cells, it still needs 1 step to exit the board.
+        # reaches one of the exit cells, it still needs 1 step to exit the
+        # board.
         return sum(min([1 + hex_distance(cell, target)
                 for target in target_cells]) for cell in piece_cells)
 
@@ -267,6 +247,30 @@ def generate_cells(cell, delta_pairs):
     """
     return [(cell[0] + delta_q, cell[1] + delta_r)
                 for delta_q, delta_r in delta_pairs]
+
+
+def moveable_cells(current_cell, state):
+    """
+    moveable_cells are cells next to the current_cell with nothing occupied
+    """
+    neighbours = generate_cells(current_cell, MOVE_DELTA)
+    return [cell for cell in neighbours if cell in state and state[cell] == ""]
+
+
+def jumpable_cells(current_cell, state):
+    """
+    jumpable_cells are cells that are one cell apart from the current cell
+    and cells in the middle must be occupied by either blocks or pieces
+    """
+    generated_cells = generate_cells(current_cell, JUMP_DELTA)
+    jumpable = []
+    for cell in generated_cells:
+        if cell in state and state[cell] == "":
+            jumpover = tuple(map(lambda x, y: (x + y) // 2, current_cell,
+                                 cell))
+            if jumpover in state and state[jumpover] != "":
+                jumpable.append(cell)
+    return jumpable
 
 # -----------------------------------------------------------------------------
 
