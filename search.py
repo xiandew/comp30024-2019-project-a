@@ -94,12 +94,8 @@ def all_cells():
     """
     generate the coordinates of all cells on the board.
     """
-    cells = [(0, 0)]
-    for (q, r) in cells:
-        cells += [(q + delta_q, r + delta_r) for delta_q, delta_r in MOVE_DELTA]
-        if len(set(cells)) == TOTAL_CELLS:
-            break
-    return set(cells)
+    ran = range(-3, +3+1)
+    return [(q, r) for q in ran for r in ran if -q-r in ran]
 
 
 def setup_goal_state(initial_state):
