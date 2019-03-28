@@ -101,11 +101,8 @@ def all_cells():
     """
     generate the coordinates of all cells on the board.
     """
-    cells = []
     ran = range(MIN_COORDINATE, MAX_COORDINATE + 1)
-    for qr in [(q, r) for q in ran for r in ran if -q-r in ran]:
-        cells.append(qr)
-    return set(cells)
+    return [(q, r) for q in ran for r in ran if -q-r in ran]
 
 
 def setup_goal_state(initial_state):
@@ -249,11 +246,14 @@ class ChexersProblem(Problem):
     def h(self, node):
         target_cells = self.exit_cells
         piece_cells = get_pieces(node.state)
-        # If the node will reach the goal, return the smallest heuristic of 0
+        # If there are no pieces, which means the node will reach the goal,
+        # return the smallest heuristic of 0 in this case.
         if not piece_cells:
             return 0
-        # Plus 1 to ensure the optimal state is always the state with no pieces
-        return 1 + sum(min([hex_distance(cell, target)
+        # Otherwise, the heuristic is the sum of [the minimum distance of each
+        # piece to the exit cells + 1]. Plus 1 means that when each piece
+        # reaches one of the exit cells, it still needs 1 step to exit the board.
+        return sum(min([1 + hex_distance(cell, target)
                 for target in target_cells]) for cell in piece_cells)
 
 
@@ -358,9 +358,8 @@ def print_board(board_dict, message="", debug=False, **kwargs):
 #              `-._,-' `-._,-' `-._,-' `-._,-'     `-._,-'"""
 
     # prepare the provided board contents as strings, formatted to size.
-    ran = range(MIN_COORDINATE, MAX_COORDINATE+1)
     cells = []
-    for qr in [(q, r) for q in ran for r in ran if -q-r in ran]:
+    for qr in all_cells():
         if qr in board_dict:
             cell = str(board_dict[qr]).center(5)
         else:
