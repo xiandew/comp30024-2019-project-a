@@ -49,7 +49,7 @@ def main():
 
     # Search for the goal node
     goal_node = astar_search(ChexersProblem(initial_state, goal_state,
-                                            data[COLOUR]))
+                                            data[COLOUR], data[BLOCKS]))
 
     print_actions(goal_node)
 

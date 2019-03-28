@@ -3,7 +3,6 @@ from state import State
 import math
 
 # String constants to avoid typos
-BLOCKS = "blocks"
 MOVE = "MOVE"
 JUMP = "JUMP"
 EXIT = "EXIT"
@@ -34,16 +33,15 @@ class ChexersProblem(Problem):
     ChexersProblem class for the project. Inherits from Problem and abstract
     methods were implemented by formulating the chexers.
     """
-    def __init__(self, initial, goal, piece_colour):
+    def __init__(self, initial, goal, piece_colour, blocks):
         Problem.__init__(self, initial, goal)
 
         # the colour of our pieces
         self.piece_colour = piece_colour
 
         # Setup the exit cells for given colour with blocked cells removed
-        self.exit_cells = (set(EXIT_CELLS[self.piece_colour]) -
-                           set([cell for cell, occupied in self.goal.items()
-                                if occupied == BLOCKS]))
+        self.exit_cells = (set(EXIT_CELLS[piece_colour]) -
+                           set([tuple(block) for block in blocks]))
 
     def is_exitable(self, piece):
         if piece in self.exit_cells:
