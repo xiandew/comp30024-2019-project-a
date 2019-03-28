@@ -13,10 +13,10 @@ import json
 import math
 import time
 
+from chexersProblem import ChexersProblem
+from state import State
 
-from aima_python.search import (
-    Problem, astar_search
-)
+from aima_python.search import astar_search
 
 # -----------------------------------------------------------------------------
 
@@ -32,28 +32,8 @@ EXIT = "EXIT"
 MIN_COORDINATE = -3
 MAX_COORDINATE = 3
 
-# Delta values which give the corresponding cells by adding them to the current
-# cell
-MOVE_DELTA = [(0, 1), (1, 0), (-1, 1), (0, -1), (-1, 0), (1, -1)]
-JUMP_DELTA = [(0, -2), (2, -2), (2, 0), (0, 2), (-2, 2), (-2, 0)]
-
-# The exit cells for pieces of each colour
-EXIT_CELLS = {
-    "red": [(3, -3), (3, -2), (3, -1), (3, 0)],
-    "blue": [(0, -3), (-1, -2), (-2, -1), (-3, 0)],
-    "green": [(-3, 3), (-2, 3), (-1, 3), (0, 3)]
-}
-
 # Total number of cells on the board
 TOTAL_CELLS = 37
-
-# Path costs of three actions, which will set the algorithm's preference of
-# each action
-PATH_COSTS = {
-    MOVE: 2,
-    JUMP: 1,
-    EXIT: 0
-}
 
 # -----------------------------------------------------------------------------
 
@@ -68,13 +48,9 @@ def main():
     # setup the goal state
     goal_state = setup_goal_state(initial_state)
 
-    # setup the exit cells for given colour with blocked cells removed
-    exit_cells = (set(EXIT_CELLS[data[COLOUR]]) -
-                  set([tuple(cell) for cell in data[BLOCKS]]))
-
     # Search for the goal node
     goal_node = astar_search(ChexersProblem(initial_state, goal_state,
-                                            exit_cells))
+                                            data[COLOUR]))
 
     print_actions(goal_node)
 
@@ -91,7 +67,7 @@ def setup_initial_state(data):
     """
     initial_state = dict(zip(all_cells(), [""] * TOTAL_CELLS))
     for cell in data[PIECES]:
-        initial_state[tuple(cell)] = PIECES
+        initial_state[tuple(cell)] = data[COLOUR]
     for cell in data[BLOCKS]:
         initial_state[tuple(cell)] = BLOCKS
     return State(initial_state)
@@ -133,163 +109,6 @@ def print_actions(goal_node):
             where_from, where_to = action[1], action[2]
             print("{} from {} to {}.".format(operator, where_from, where_to))
 
-# -----------------------------------------------------------------------------
-
-
-class State(dict):
-    """
-    State class inherits from built-in dict. Make it immutable, hashable and
-    comparable for compatible with the referenced search algorithms from AIMA.
-
-    It is used to store a state of the board which is defined by all cells on
-    the board and their corresponding states (whether the cell is empty,
-    blocked or occupied by a piece).
-
-    Acknowledgement: This code is referenced from official python developer's
-    guide <https://www.python.org/dev/peps/pep-0351/#sample-implementations>
-    """
-
-    def _immutable(self, *args, **kws):
-        raise TypeError('state is immutable')
-
-    __setitem__ = _immutable
-    __delitem__ = _immutable
-    clear = _immutable
-    update = _immutable
-    setdefault = _immutable
-    pop = _immutable
-    popitem = _immutable
-
-    def __hash__(self):
-        return hash(str(self))
-
-    def __lt__(self, other):
-        return str(self) < str(other)
-
-# -----------------------------------------------------------------------------
-
-
-class ChexersProblem(Problem):
-    """
-    ChexersProblem class for the project. Inherits from Problem and abstract
-    methods were implemented by formulating the chexers.
-    """
-    def __init__(self, initial, goal, exit_cells):
-        self.exit_cells = exit_cells
-        Problem.__init__(self, initial, goal)
-
-    def is_exitable(self, piece):
-        if piece in self.exit_cells:
-            return True
-        return False
-
-    def actions(self, state):
-        """
-        Possible actions include move, jump and exit.
-        """
-        possible_actions = []
-        for where_from in get_pieces(state):
-            possible_actions += (
-                [(MOVE, where_from, where_to)
-                    for where_to in moveable_cells(where_from, state)]
-              + [(JUMP, where_from, where_to)
-                    for where_to in jumpable_cells(where_from, state)]
-              + ([(EXIT, where_from)]
-                    if self.is_exitable(where_from) else [])
-            )
-        return possible_actions
-
-    def result(self, state, action):
-        new_state = dict(state)
-
-        # update the new state by the action
-        operator = action[0]
-        # Exit action will result one piece disappear and leave the exit cell
-        # empty
-        if operator == EXIT:
-            where_from = action[1]
-            new_state[where_from] = ""
-        # Move or jump action will exchange the states of two cells
-        if operator == MOVE or operator == JUMP:
-            where_from, where_to = action[1], action[2]
-            [new_state[where_from], new_state[where_to]] = (
-                [new_state[where_to], new_state[where_from]])
-        return State(new_state)
-
-    def goal_test(self, state):
-        return Problem.goal_test(self, state)
-
-    def path_cost(self, c, state1, action, state2):
-        return c + PATH_COSTS[action[0]]
-
-    def h(self, node):
-        target_cells = self.exit_cells
-        piece_cells = get_pieces(node.state)
-        # If there are no pieces, which means the node will reach the goal,
-        # return the smallest heuristic of 0 in this case.
-        if not piece_cells:
-            return 0
-        # Otherwise, the heuristic is the sum of [the minimum distance of each
-        # piece to the exit cells + 1]. Plus 1 means that when each piece
-        # reaches one of the exit cells, it still needs 1 step to exit the
-        # board.
-        return sum(min([1 + hex_distance(cell, target)
-                for target in target_cells]) for cell in piece_cells)
-
-
-def get_pieces(state):
-    return [cell for cell, occupied in state.items() if occupied == PIECES]
-
-
-def generate_cells(cell, delta_pairs):
-    """
-    generate a list of six cells by adding delta values
-    """
-    return [(cell[0] + delta_q, cell[1] + delta_r)
-                for delta_q, delta_r in delta_pairs]
-
-
-def moveable_cells(current_cell, state):
-    """
-    moveable_cells are cells next to the current_cell with nothing occupied
-    """
-    neighbours = generate_cells(current_cell, MOVE_DELTA)
-    return [cell for cell in neighbours if cell in state and state[cell] == ""]
-
-
-def jumpable_cells(current_cell, state):
-    """
-    jumpable_cells are cells that are one cell apart from the current cell
-    and cells in the middle must be occupied by either blocks or pieces
-    """
-    generated_cells = generate_cells(current_cell, JUMP_DELTA)
-    jumpable = []
-    for cell in generated_cells:
-        if cell in state and state[cell] == "":
-            jumpover = tuple(map(lambda x, y: (x + y) // 2, current_cell,
-                                 cell))
-            if jumpover in state and state[jumpover] != "":
-                jumpable.append(cell)
-    return jumpable
-
-# -----------------------------------------------------------------------------
-
-
-def hex_distance(a, b):
-    """
-    Acknowledgement: This function was copied and reproduced from a JS version
-    on redblobgames website, which can be found from
-    <https://www.redblobgames.com/grids/cellagons/#distances-axial>
-
-    Calculate the hex distance for axial coordinates system.
-    """
-    return (abs(a[0] - b[0])
-          + abs(a[0] + a[1] - b[0] - b[1])
-          + abs(a[1] - b[1])) / 2
-
-
-def euclidean_distance(x, y):
-    return math.sqrt(sum([(a - b) ** 2 for a, b in zip(x, y)]))
 
 # -----------------------------------------------------------------------------
 
