@@ -18,7 +18,7 @@ from aima_python.search import (
     Problem, astar_search
 )
 
-# -------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 # String constants to avoid typos
 COLOUR = "colour"
@@ -28,7 +28,8 @@ MOVE = "MOVE"
 JUMP = "JUMP"
 EXIT = "EXIT"
 
-# Delta values which give the corresponding cells by adding them to the current cell
+# Delta values which give the corresponding cells by adding them to the current
+# cell
 MOVE_DELTA = [(0, 1), (1, 0), (-1, 1), (0, -1), (-1, 0), (1, -1)]
 JUMP_DELTA = [(0, -2), (2, -2), (2, 0), (0, 2), (-2, 2), (-2, 0)]
 
@@ -36,13 +37,14 @@ JUMP_DELTA = [(0, -2), (2, -2), (2, 0), (0, 2), (-2, 2), (-2, 0)]
 EXIT_CELLS = {
     "red": [(3, -3), (3, -2), (3, -1), (3, 0)],
     "blue": [(0, -3), (-1, -2), (-2, -1), (-3, 0)],
-    "green":[(-3, 3), (-2, 3), (-1, 3), (0, 3)]
+    "green": [(-3, 3), (-2, 3), (-1, 3), (0, 3)]
 }
 
 # Total number of cells on the board
 TOTAL_CELLS = 37
 
-# Path costs of three actions, which will set the algorithm's preferrence of each action
+# Path costs of three actions, which will set the algorithm's preference of
+# each action
 PATH_COSTS = {
     MOVE: 2,
     JUMP: 1,
@@ -64,14 +66,15 @@ def main():
 
     # setup the exit cells for given colour with blocked cells removed
     exit_cells = (set(EXIT_CELLS[data[COLOUR]]) -
-                    set([tuple(cell) for cell in data[BLOCKS]]))
+                  set([tuple(cell) for cell in data[BLOCKS]]))
 
     # Search for the goal node
-    goal_node = astar_search(ChexersProblem(initial_state, goal_state, exit_cells))
+    goal_node = astar_search(ChexersProblem(initial_state, goal_state,
+                                            exit_cells))
 
     print_actions(goal_node)
 
-# -------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 
 def setup_initial_state(data):
@@ -96,7 +99,8 @@ def all_cells():
     """
     cells = [(0, 0)]
     for (q, r) in cells:
-        cells += [(q + delta_q, r + delta_r) for delta_q, delta_r in MOVE_DELTA]
+        cells += [(q + delta_q, r + delta_r) for delta_q, delta_r in
+                  MOVE_DELTA]
         if len(set(cells)) == TOTAL_CELLS:
             break
     return set(cells)
@@ -130,7 +134,7 @@ def print_actions(goal_node):
             where_from, where_to = action[1], action[2]
             print("{} from {} to {}.".format(operator, where_from, where_to))
 
-# -------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 
 class State(dict):
@@ -139,8 +143,8 @@ class State(dict):
     comparable for compatible with the referenced search algorithms from AIMA.
 
     It is used to store a state of the board which is defined by all cells on
-    the board and their corresponding states (whether the cell is empty, blocked
-    or occupied by a piece).
+    the board and their corresponding states (whether the cell is empty,
+    blocked or occupied by a piece).
 
     Acknowledgement: This code is referenced from official python developer's
     guide <https://www.python.org/dev/peps/pep-0351/#sample-implementations>
@@ -151,11 +155,11 @@ class State(dict):
 
     __setitem__ = _immutable
     __delitem__ = _immutable
-    clear       = _immutable
-    update      = _immutable
-    setdefault  = _immutable
-    pop         = _immutable
-    popitem     = _immutable
+    clear = _immutable
+    update = _immutable
+    setdefault = _immutable
+    pop = _immutable
+    popitem = _immutable
 
     def __hash__(self):
         return hash(str(self))
@@ -163,7 +167,7 @@ class State(dict):
     def __lt__(self, other):
         return str(self) < str(other)
 
-# -------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 
 class ChexersProblem(Problem):
@@ -215,14 +219,15 @@ class ChexersProblem(Problem):
               + ([(EXIT, where_from)]
                     if self.is_exitable(where_from) else [])
             )
-        return possible_actions;
+        return possible_actions
 
     def result(self, state, action):
         new_state = dict(state)
 
         # update the new state by the action
         operator = action[0]
-        # Exit action will result one piece disappear and leave the exit cell empty
+        # Exit action will result one piece disappear and leave the exit cell
+        # empty
         if operator == EXIT:
             where_from = action[1]
             new_state[where_from] = ""
@@ -231,7 +236,7 @@ class ChexersProblem(Problem):
             where_from, where_to = action[1], action[2]
             [new_state[where_from], new_state[where_to]] = (
                 [new_state[where_to], new_state[where_from]])
-        return State(new_state);
+        return State(new_state)
 
     def goal_test(self, state):
         return Problem.goal_test(self, state)
@@ -261,7 +266,7 @@ def generate_cells(cell, delta_pairs):
     return [(cell[0] + delta_q, cell[1] + delta_r)
                 for delta_q, delta_r in delta_pairs]
 
-# -------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 
 def hex_distance(a, b):
@@ -280,7 +285,7 @@ def hex_distance(a, b):
 def euclidean_distance(x, y):
     return math.sqrt(sum([(a - b) ** 2 for a, b in zip(x, y)]))
 
-# -------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 
 def print_board(board_dict, message="", debug=False, **kwargs):
