@@ -87,7 +87,7 @@ def setup_goal_state(initial_state):
     """
     goal_state = dict(initial_state)
     for cell, occupied in goal_state.items():
-        if occupied != BLOCKS:
+        if occupied != BLOCK:
             goal_state[cell] = ""
     return State(goal_state)
 
