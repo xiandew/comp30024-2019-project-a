@@ -96,17 +96,17 @@ def print_actions(goal_node):
     Print the actions taken to reach the goal node in the specified format
     """
 
-    for path in goal_node.path():
-        action = path.action
+    for node in goal_node.path():
+        action = node.action
         if not action:
             continue
         operator = action[0]
         if operator == EXIT:
-            where_from = action[1]
-            print("{} from {}.".format(operator, where_from))
+            curr_cell = action[1]
+            print("{} from {}.".format(operator, curr_cell))
         if operator == MOVE or operator == JUMP:
-            where_from, where_to = action[1], action[2]
-            print("{} from {} to {}.".format(operator, where_from, where_to))
+            curr_cell, next_cell = action[1], action[2]
+            print("{} from {} to {}.".format(operator, curr_cell, next_cell))
 
 
 # -----------------------------------------------------------------------------
