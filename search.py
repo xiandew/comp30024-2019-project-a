@@ -23,6 +23,7 @@ from aima_python.search import astar_search
 COLOUR = "colour"
 PIECES = "pieces"
 BLOCKS = "blocks"
+BLOCK = "block"
 MOVE = "MOVE"
 JUMP = "JUMP"
 EXIT = "EXIT"
@@ -68,7 +69,7 @@ def setup_initial_state(data):
     for cell in data[PIECES]:
         initial_state[tuple(cell)] = data[COLOUR]
     for cell in data[BLOCKS]:
-        initial_state[tuple(cell)] = BLOCKS
+        initial_state[tuple(cell)] = BLOCK
     return State(initial_state)
 
 
