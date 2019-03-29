@@ -45,6 +45,8 @@ def main():
     # setup the initial state
     initial_state = setup_initial_state(data)
 
+    print_board(initial_state, "", True)
+
     # setup the goal state
     goal_state = setup_goal_state(initial_state)
 
@@ -108,6 +110,8 @@ def print_actions(goal_node):
         if operator == MOVE or operator == JUMP:
             curr_cell, next_cell = action[1], action[2]
             print("{} from {} to {}.".format(operator, curr_cell, next_cell))
+
+    print("# {} moves".format(len(goal_node.path()) - 1))
 
 
 # -----------------------------------------------------------------------------
