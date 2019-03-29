@@ -106,8 +106,16 @@ class ChexersProblem(Problem):
         # piece to the exit cells + 1]. Plus 1 means that when each piece
         # reaches one of the exit cells, it still needs 1 step to exit the
         # board.
-        return sum(min([1 + hex_distance(cell, target)
-                        for target in target_cells]) for cell in piece_cells)
+
+        # return sum(1 + min([hex_distance(cell, target)
+        #                 for target in target_cells]) for cell in piece_cells)
+
+        return sum(1 + avg([hex_distance(cell, target)
+                        for target in target_cells]) for cell in piece_cells )
+
+
+def avg(lst):
+    return sum(lst) / len(lst)
 
 
 def generate_cells(cell, delta_pairs):
