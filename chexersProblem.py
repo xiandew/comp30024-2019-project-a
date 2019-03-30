@@ -30,8 +30,8 @@ PATH_COSTS = {
 
 class ChexersProblem(Problem):
     """
-    ChexersProblem class for the project. Inherits from Problem and abstract
-    methods were implemented by formulating the chexers.
+    ChexersProblem class for the project. Inherits from Problem.
+    Methods were implemented by formulating the chexers problem.
     """
     def __init__(self, initial, goal, piece_colour, blocks):
         Problem.__init__(self, initial, goal)
@@ -89,9 +89,6 @@ class ChexersProblem(Problem):
                 [new_state[next_cell], new_state[curr_cell]])
         return State(new_state)
 
-    def goal_test(self, state):
-        return Problem.goal_test(self, state)
-
     def path_cost(self, c, state1, action, state2):
         return c + PATH_COSTS[action[0]]
 
@@ -102,16 +99,15 @@ class ChexersProblem(Problem):
         # return the smallest heuristic of 0 in this case.
         if not piece_cells:
             return 0
-        # Otherwise, the heuristic is the sum of [the minimum distance of each
+        # Otherwise, the heuristic is the sum of [the average distance of each
         # piece to the exit cells + 1]. Plus 1 means that when each piece
         # reaches one of the exit cells, it still needs 1 step to exit the
         # board.
+        return sum(1 + avg([hex_distance(cell, target)
+                        for target in target_cells]) for cell in piece_cells)
 
         # return sum(1 + min([hex_distance(cell, target)
         #                 for target in target_cells]) for cell in piece_cells)
-
-        return sum(1 + avg([hex_distance(cell, target)
-                        for target in target_cells]) for cell in piece_cells )
 
 
 def avg(lst):
