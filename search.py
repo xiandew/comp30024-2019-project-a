@@ -45,7 +45,7 @@ def main():
     # setup the initial state
     initial_state = setup_initial_state(data)
 
-    print_board(initial_state, "", True)
+    #print_board(initial_state, "", True)
 
     # setup the goal state
     goal_state = setup_goal_state(initial_state)
@@ -108,7 +108,7 @@ def print_actions(goal_node):
             curr_cell, next_cell = action[1], action[2]
             print("{} from {} to {}.".format(operator, curr_cell, next_cell))
 
-    print("# {} moves".format(len(goal_node.path()) - 1))
+    # print("# {} moves".format(len(goal_node.path()) - 1))
 
 
 # -----------------------------------------------------------------------------
@@ -199,4 +199,4 @@ def print_board(board_dict, message="", debug=False, **kwargs):
 if __name__ == '__main__':
     start_time = time.time()
     main()
-    print("# --- %s seconds ---" % (time.time() - start_time))
+    # print("# --- %s seconds ---" % (time.time() - start_time))

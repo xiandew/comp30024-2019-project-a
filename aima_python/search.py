@@ -353,7 +353,7 @@ def best_first_graph_search(problem, f):
     values will be cached on the nodes as they are computed. So after doing
     a best first search you can examine the f values of the path returned."""
     f = memoize(f, 'f')
-    node = Node(problem.initial)
+    node = Node(problem.initial, None, None, 1)
     frontier = PriorityQueue('min', f)
     frontier.append(node)
     explored = set()

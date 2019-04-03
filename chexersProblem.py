@@ -109,7 +109,7 @@ class ChexersProblem(Problem):
 
         rs = [(avg([hex_distance(cell, target) for target in target_cells]), cell) for cell in piece_cells]
 
-        return sum(1 + max(self.hexDistances[cell], r) for r, cell in rs)
+        return sum(1 + self.hexDistances[cell] for r, cell in rs)
 
 
 def avg(lst):

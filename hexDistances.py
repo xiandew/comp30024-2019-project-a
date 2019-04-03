@@ -18,7 +18,7 @@ def getHexDistances(board, exit_cells):
     for exit_cell in exit_cells:
         uniform_cost_search(HexDistances(exit_cell))
 
-    print_board(HexDistances.dict, "", True)
+    # print_board(HexDistances.dict, "", True)
     return HexDistances.dict
 
 
@@ -34,7 +34,7 @@ class HexDistances(Problem):
 
     def __init__(self, piece):
         super().__init__(self.setup_initial_state(piece))
-        HexDistances.dict[piece] = 0
+        HexDistances.dict[piece] = 1
 
     def setup_initial_state(self, piece):
         initial_state = HexDistances.board.copy()
@@ -43,7 +43,7 @@ class HexDistances(Problem):
 
     def actions(self, state):
         """
-        Possible actions include move, jump and exit.
+        Possible actions include move, jump
         """
         possible_actions = []
         for curr_cell in self.get_pieces(state):
