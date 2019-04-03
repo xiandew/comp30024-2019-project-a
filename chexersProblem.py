@@ -1,16 +1,16 @@
 from aima_python.search import Problem
 
-from hexDistances import (
-    getHexDistances, moveable_cells, jumpable_cells
-)
+from approxDistances import (ApproxDistances, setup_approx_distances)
 from state import State
+from utils import (
+    COLOUR, PIECES, BLOCKS, BLOCK, MOVE, JUMP, EXIT,
+    all_cells, moveable_cells, jumpable_cells
+)
 
 import math
 
-# String constants to avoid typos
-MOVE = "MOVE"
-JUMP = "JUMP"
-EXIT = "EXIT"
+# Total number of cells on the board
+TOTAL_CELLS = 37
 
 # The exit cells for pieces of each colour
 EXIT_CELLS = {
@@ -32,17 +32,24 @@ class ChexersProblem(Problem):
     ChexersProblem class for the project. Inherits from Problem.
     Methods were implemented by formulating the chexers problem.
     """
-    def __init__(self, initial, goal, piece_colour, blocks):
-        Problem.__init__(self, initial, goal)
-
-        # the colour of our pieces
-        self.piece_colour = piece_colour
+    def __init__(self, data):
+        # the colour of the pieces
+        self.piece_colour = data[COLOUR]
 
         # Setup the exit cells for given colour with blocked cells removed
-        self.exit_cells = (set(EXIT_CELLS[piece_colour]) -
-                           set([tuple(block) for block in blocks]))
+        self.exit_cells = (set(EXIT_CELLS[self.piece_colour]) -
+                                set([tuple(block) for block in data[BLOCKS]]))
 
-        self.hexDistances = getHexDistances(goal, self.exit_cells)
+        ApproxDistances.starting_points = self.exit_cells
+
+        # setup the initial state
+        initial_state = setup_initial_state(data)
+        # print_board(initial_state, "", True)
+
+        # setup the goal state
+        goal_state = setup_goal_state(initial_state)
+
+        super().__init__(initial_state, goal_state)
 
     def is_exitable(self, piece):
         if piece in self.exit_cells:
@@ -70,50 +77,65 @@ class ChexersProblem(Problem):
         """
         Return cells of pieces in current state
         """
-        return [cell for cell, occupied in state.items()
-                if occupied == self.piece_colour]
+        return [cell for cell, occupied in state.board_dict.items()
+                                    if occupied == self.piece_colour]
 
     def result(self, state, action):
-        new_state = dict(state)
+        board_dict = state.board_dict.copy()
 
         # update the new state by the action
         operator = action[0]
+
         # Exit action will result one piece disappear and leave the exit cell
         # empty
         if operator == EXIT:
             curr_cell = action[1]
-            new_state[curr_cell] = ""
+            board_dict[curr_cell] = ""
         # Move or jump action will exchange the states of two cells
         if operator == MOVE or operator == JUMP:
             curr_cell, next_cell = action[1], action[2]
-            [new_state[curr_cell], new_state[next_cell]] = (
-                [new_state[next_cell], new_state[curr_cell]])
-        return State(new_state)
+            [board_dict[curr_cell], board_dict[next_cell]] = (
+                        [board_dict[next_cell], board_dict[curr_cell]])
+
+        return State(board_dict, setup_approx_distances(State(board_dict)))
 
     def path_cost(self, c, state1, action, state2):
         return c + PATH_COSTS[action[0]]
 
     def h(self, node):
-        target_cells = self.exit_cells
         piece_cells = self.get_pieces(node.state)
         # If there are no pieces, which means the node will reach the goal,
         # return the smallest heuristic of 0 in this case.
         if not piece_cells:
             return 0
-        # Otherwise, the heuristic is the sum of [the average distance of each
-        # piece to the exit cells + 1]. Plus 1 means that when each piece
+        # Otherwise, the heuristic is the sum of [... + 1]. Plus 1 means that when each piece
         # reaches one of the exit cells, it still needs 1 step to exit the
         # board.
-        # return sum(1 + avg([hex_distance(cell, target)
-        #                 for target in target_cells]) for cell in piece_cells)
-
-        rs = [(avg([hex_distance(cell, target) for target in target_cells]), cell) for cell in piece_cells]
-
-        return sum(1 + self.hexDistances[cell] for r, cell in rs)
+        return sum(1 + node.state.distance_dict[cell] for cell in piece_cells)
 
 
-def avg(lst):
-    return sum(lst) / len(lst)
+def setup_initial_state(data):
+    """
+    Initial state:
+    """
+    board_dict = dict(zip(all_cells(), [""] * TOTAL_CELLS))
+    for cell in data[PIECES]:
+        board_dict[tuple(cell)] = data[COLOUR]
+    for cell in data[BLOCKS]:
+        board_dict[tuple(cell)] = BLOCK
+
+    return State(board_dict, setup_approx_distances(State(board_dict)))
+
+
+def setup_goal_state(initial_state):
+    """
+    Goal state:
+    """
+    board_dict = initial_state.board_dict.copy()
+    for cell, occupied in board_dict.items():
+        if occupied != BLOCK:
+            board_dict[cell] = ""
+    return State(board_dict)
 
 # -----------------------------------------------------------------------------
 
@@ -132,3 +154,6 @@ def hex_distance(a, b):
 
 def euclidean_distance(x, y):
     return math.sqrt(sum([(a - b) ** 2 for a, b in zip(x, y)]))
+
+def avg(lst):
+    return sum(lst) / len(lst)
