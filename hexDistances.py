@@ -1,79 +1,114 @@
-"""
-COMP30024 Artificial Intelligence, Semester 1 2019
-Solution to Project Part A: Searching
-
-Acknowledgement: Search algorithms are referenced from AIMA provided code.
-Source files can be found from <https://github.com/aimacode/aima-python>
-
-Authors:
-"""
-
-import sys
-import json
-import time
-
-from chexersProblem import ChexersProblem
+from aima_python.search import (Problem, uniform_cost_search)
 from state import State
 
-from aima_python.search import (astar_search, depth_first_graph_search)
-
-# -----------------------------------------------------------------------------
-
 # String constants to avoid typos
-COLOUR = "colour"
-PIECES = "pieces"
-BLOCKS = "blocks"
-BLOCK = "block"
+PIECE = "piece"
 MOVE = "MOVE"
 JUMP = "JUMP"
 EXIT = "EXIT"
 
-# The minimum and maximum coordinates on the q and r axes
+# Delta values which give the corresponding cells by adding them to the current
+# cell
+MOVE_DELTA = [(0, 1), (1, 0), (-1, 1), (0, -1), (-1, 0), (1, -1)]
+JUMP_DELTA = [(0, -2), (2, -2), (2, 0), (0, 2), (-2, 2), (-2, 0)]
+
+def getHexDistances(board, exit_cells):
+    HexDistances.board = board
+
+    for exit_cell in exit_cells:
+        uniform_cost_search(HexDistances(exit_cell))
+
+    print_board(HexDistances.dict, "", True)
+    return HexDistances.dict
+
+
+class HexDistances(Problem):
+    """
+    Compute minimum hex distances to any exit cells for each hex with
+    detouring blocks by starting from exit cells and visiting each unoccupied
+    hexes
+    """
+
+    # key: hex, value: distance
+    dict = {}
+
+    def __init__(self, piece):
+        super().__init__(self.setup_initial_state(piece))
+        HexDistances.dict[piece] = 0
+
+    def setup_initial_state(self, piece):
+        initial_state = HexDistances.board.copy()
+        initial_state[piece] = PIECE
+        return State(initial_state)
+
+    def actions(self, state):
+        """
+        Possible actions include move, jump and exit.
+        """
+        possible_actions = []
+        for curr_cell in self.get_pieces(state):
+            # Move actions
+            for next_cell in moveable_cells(curr_cell, state):
+                possible_actions += [(MOVE, curr_cell, next_cell)]
+            # Jump actions
+            for next_cell in jumpable_cells(curr_cell, state):
+                possible_actions += [(JUMP, curr_cell, next_cell)]
+        return possible_actions
+
+    def result(self, state, action):
+        new_state = dict(state)
+        curr_cell, next_cell = action[1], action[2]
+        [new_state[curr_cell], new_state[next_cell]] = (
+            [new_state[next_cell], new_state[curr_cell]])
+        return State(new_state)
+
+    def path_cost(self, c, state1, action, state2):
+        next_cell = action[2]
+        cost = c + 1
+        if (not next_cell in HexDistances.dict) or HexDistances.dict[next_cell] > cost:
+            HexDistances.dict[next_cell] = cost
+        return cost
+
+    def get_pieces(self, state):
+        """
+        Return cells of pieces in current state
+        """
+        return [cell for cell, occupied in state.items() if occupied == PIECE]
+
+
+def generate_cells(cell, delta_pairs):
+    """
+    generate a list of six cells by adding delta values
+    """
+    return [(cell[0] + delta_q, cell[1] + delta_r)
+            for delta_q, delta_r in delta_pairs]
+
+
+def moveable_cells(current_cell, state):
+    """
+    moveable_cells are cells next to the current_cell with nothing occupied
+    """
+    neighbours = generate_cells(current_cell, MOVE_DELTA)
+    return [cell for cell in neighbours if cell in state and state[cell] == ""]
+
+def jumpable_cells(current_cell, state):
+    """
+    jumpable_cells are cells that are one cell apart from the current cell
+    and cells in the middle must be occupied by either blocks or pieces
+    """
+    generated_cells = generate_cells(current_cell, JUMP_DELTA)
+    jumpable = []
+    for cell in generated_cells:
+        if cell in state and state[cell] == "":
+            jumpover = tuple(map(lambda x, y: (x + y) // 2, current_cell,
+                                 cell))
+            if jumpover in state and state[jumpover] != "":
+                jumpable.append(cell)
+    return jumpable
+
+
 MIN_COORDINATE = -3
 MAX_COORDINATE = 3
-
-# Total number of cells on the board
-TOTAL_CELLS = 37
-
-# -----------------------------------------------------------------------------
-
-
-def main():
-    with open(sys.argv[1]) as file:
-        data = json.load(file)
-
-    # setup the initial state
-    initial_state = setup_initial_state(data)
-
-    print_board(initial_state, "", True)
-
-    # setup the goal state
-    goal_state = setup_goal_state(initial_state)
-
-    # Search for the goal node
-    goal_node = astar_search(ChexersProblem(initial_state, goal_state,
-                                            data[COLOUR], data[BLOCKS]))
-
-    print_actions(goal_node)
-
-# -----------------------------------------------------------------------------
-
-
-def setup_initial_state(data):
-    """
-    Initial state: a board_dict with pieces and blocks as specified.
-    We use the following to indicate that state of a cell.
-    - "": cell is not occupied;
-    - "pieces": cell is occupied by a piece;
-    - "blocks": cell is blocked.
-    """
-    initial_state = dict(zip(all_cells(), [""] * TOTAL_CELLS))
-    for cell in data[PIECES]:
-        initial_state[tuple(cell)] = data[COLOUR]
-    for cell in data[BLOCKS]:
-        initial_state[tuple(cell)] = BLOCK
-    return State(initial_state)
-
 
 def all_cells():
     """
@@ -81,38 +116,6 @@ def all_cells():
     """
     ran = range(MIN_COORDINATE, MAX_COORDINATE + 1)
     return [(q, r) for q in ran for r in ran if -q-r in ran]
-
-
-def setup_goal_state(initial_state):
-    """
-    Goal state: a board_dict with blocks but no pieces
-    """
-    goal_state = dict(initial_state)
-    for cell, occupied in goal_state.items():
-        if occupied != BLOCK:
-            goal_state[cell] = ""
-    return State(goal_state)
-
-
-def print_actions(goal_node):
-    """
-    Print the actions taken to reach the goal node in the specified format
-    """
-
-    for action in goal_node.solution():
-        operator = action[0]
-        if operator == EXIT:
-            curr_cell = action[1]
-            print("{} from {}.".format(operator, curr_cell))
-        if operator == MOVE or operator == JUMP:
-            curr_cell, next_cell = action[1], action[2]
-            print("{} from {} to {}.".format(operator, curr_cell, next_cell))
-
-    print("# {} moves".format(len(goal_node.path()) - 1))
-
-
-# -----------------------------------------------------------------------------
-
 
 def print_board(board_dict, message="", debug=False, **kwargs):
     """
@@ -193,10 +196,3 @@ def print_board(board_dict, message="", debug=False, **kwargs):
     # fill in the template to create the board drawing, then print!
     board = template.format(message, *cells)
     print(board, **kwargs)
-
-
-# when this module is executed, run the `main` function:
-if __name__ == '__main__':
-    start_time = time.time()
-    main()
-    print("# --- %s seconds ---" % (time.time() - start_time))

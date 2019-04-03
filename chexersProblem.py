@@ -1,16 +1,16 @@
 from aima_python.search import Problem
+
+from hexDistances import (
+    getHexDistances, moveable_cells, jumpable_cells
+)
 from state import State
+
 import math
 
 # String constants to avoid typos
 MOVE = "MOVE"
 JUMP = "JUMP"
 EXIT = "EXIT"
-
-# Delta values which give the corresponding cells by adding them to the current
-# cell
-MOVE_DELTA = [(0, 1), (1, 0), (-1, 1), (0, -1), (-1, 0), (1, -1)]
-JUMP_DELTA = [(0, -2), (2, -2), (2, 0), (0, 2), (-2, 2), (-2, 0)]
 
 # The exit cells for pieces of each colour
 EXIT_CELLS = {
@@ -27,7 +27,6 @@ PATH_COSTS = {
     EXIT: 0
 }
 
-
 class ChexersProblem(Problem):
     """
     ChexersProblem class for the project. Inherits from Problem.
@@ -42,6 +41,8 @@ class ChexersProblem(Problem):
         # Setup the exit cells for given colour with blocked cells removed
         self.exit_cells = (set(EXIT_CELLS[piece_colour]) -
                            set([tuple(block) for block in blocks]))
+
+        self.hexDistances = getHexDistances(goal, self.exit_cells)
 
     def is_exitable(self, piece):
         if piece in self.exit_cells:
@@ -103,48 +104,18 @@ class ChexersProblem(Problem):
         # piece to the exit cells + 1]. Plus 1 means that when each piece
         # reaches one of the exit cells, it still needs 1 step to exit the
         # board.
-        return sum(1 + avg([hex_distance(cell, target)
-                        for target in target_cells]) for cell in piece_cells)
-
-        # return sum(1 + min([hex_distance(cell, target)
+        # return sum(1 + avg([hex_distance(cell, target)
         #                 for target in target_cells]) for cell in piece_cells)
+
+        rs = [(avg([hex_distance(cell, target) for target in target_cells]), cell) for cell in piece_cells]
+
+        return sum(1 + max(self.hexDistances[cell], r) for r, cell in rs)
 
 
 def avg(lst):
     return sum(lst) / len(lst)
 
-
-def generate_cells(cell, delta_pairs):
-    """
-    generate a list of six cells by adding delta values
-    """
-    return [(cell[0] + delta_q, cell[1] + delta_r)
-            for delta_q, delta_r in delta_pairs]
-
-
-def moveable_cells(current_cell, state):
-    """
-    moveable_cells are cells next to the current_cell with nothing occupied
-    """
-    neighbours = generate_cells(current_cell, MOVE_DELTA)
-    return [cell for cell in neighbours if cell in state and state[cell] == ""]
-
-
-def jumpable_cells(current_cell, state):
-    """
-    jumpable_cells are cells that are one cell apart from the current cell
-    and cells in the middle must be occupied by either blocks or pieces
-    """
-    generated_cells = generate_cells(current_cell, JUMP_DELTA)
-    jumpable = []
-    for cell in generated_cells:
-        if cell in state and state[cell] == "":
-            jumpover = tuple(map(lambda x, y: (x + y) // 2, current_cell,
-                                 cell))
-            if jumpover in state and state[jumpover] != "":
-                jumpable.append(cell)
-    return jumpable
-
+# -----------------------------------------------------------------------------
 
 def hex_distance(a, b):
     """
