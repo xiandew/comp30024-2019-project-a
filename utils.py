@@ -7,6 +7,7 @@ BLOCK = "block"
 MOVE = "MOVE"
 JUMP = "JUMP"
 EXIT = "EXIT"
+EMPTY_CELL = ""
 
 
 # The minimum and maximum coordinates on the q and r axes
@@ -40,7 +41,7 @@ def moveable_cells(curr_cell, state):
     neighbours = generate_cells(curr_cell, MOVE_DELTA)
     board_dict = state.board_dict
     return [cell for cell in neighbours
-                    if cell in board_dict and board_dict[cell] == ""]
+                    if cell in board_dict and board_dict[cell] == EMPTY_CELL]
 
 def jumpable_cells(curr_cell, state):
     """
@@ -51,9 +52,9 @@ def jumpable_cells(curr_cell, state):
     board_dict = state.board_dict
     jumpable = []
     for cell in generated_cells:
-        if cell in board_dict and board_dict[cell] == "":
+        if cell in board_dict and board_dict[cell] == EMPTY_CELL:
             jumpover = middle_piece(curr_cell, cell)
-            if jumpover in board_dict and board_dict[jumpover] != "":
+            if jumpover in board_dict and board_dict[jumpover] != EMPTY_CELL:
                 jumpable.append(cell)
     return jumpable
 
@@ -73,8 +74,8 @@ def hex_distance(a, b):
           + abs(a[1] - b[1])) / 2
 
 
-def euclidean_distance(x, y):
-    return math.sqrt(sum([(a - b) ** 2 for a, b in zip(x, y)]))
+# def euclidean_distance(x, y):
+#     return math.sqrt(sum([(a - b) ** 2 for a, b in zip(x, y)]))
 
 
 def avg(lst):

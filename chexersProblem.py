@@ -3,7 +3,7 @@ from aima_python.search import Problem
 from approxDistances import (ApproxDistances, get_approx_distances)
 from state import State
 from utils import (
-    COLOUR, PIECES, BLOCKS, BLOCK, MOVE, JUMP, EXIT,
+    COLOUR, PIECES, BLOCKS, BLOCK, MOVE, JUMP, EXIT, EMPTY_CELL,
     all_cells, moveable_cells, jumpable_cells, hex_distance, avg, middle_piece, print_board
 )
 
@@ -87,7 +87,7 @@ class ChexersProblem(Problem):
         # empty
         if operator == EXIT:
             curr_cell = action[1]
-            board_dict[curr_cell] = ""
+            board_dict[curr_cell] = EMPTY_CELL
         # Move or jump action will exchange the states of two cells
         if operator == MOVE or operator == JUMP:
             curr_cell, next_cell = action[1], action[2]
