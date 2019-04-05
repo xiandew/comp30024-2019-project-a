@@ -52,10 +52,34 @@ def jumpable_cells(curr_cell, state):
     jumpable = []
     for cell in generated_cells:
         if cell in board_dict and board_dict[cell] == "":
-            jumpover = tuple(map(lambda x, y: (x + y) // 2, curr_cell, cell))
+            jumpover = middle_piece(curr_cell, cell)
             if jumpover in board_dict and board_dict[jumpover] != "":
                 jumpable.append(cell)
     return jumpable
+
+def middle_piece(a,b):
+    return tuple(map(lambda x, y: (x + y) // 2, a, b))
+
+def hex_distance(a, b):
+    """
+    Acknowledgement: This function was copied and reproduced from a JS version
+    on redblobgames website, which can be found from
+    <https://www.redblobgames.com/grids/cellagons/#distances-axial>
+
+    Calculate the hex distance for axial coordinates system.
+    """
+    return (abs(a[0] - b[0])
+          + abs(a[0] + a[1] - b[0] - b[1])
+          + abs(a[1] - b[1])) / 2
+
+
+def euclidean_distance(x, y):
+    return math.sqrt(sum([(a - b) ** 2 for a, b in zip(x, y)]))
+
+
+def avg(lst):
+    return sum(lst) / len(lst)
+
 
 def print_board(board_dict, message="", debug=False, **kwargs):
     """

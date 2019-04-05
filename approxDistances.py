@@ -3,29 +3,33 @@ from aima_python.search import (Problem, uniform_cost_search)
 from state import State
 from utils import (
     PIECE, BLOCK, MOVE, JUMP, EXIT,
-    all_cells, moveable_cells, jumpable_cells, print_board
+    all_cells, moveable_cells, jumpable_cells, avg, print_board
 )
+from collections import defaultdict as dd
 
-
-def setup_approx_distances(curr_state):
-    ApproxDistances.curr_board_dict = curr_state.board_dict.copy()
-
-
+def get_approx_distances(curr_state, exit_cells):
     curr_pieces = [cell for cell, occupied in
-                        ApproxDistances.curr_board_dict.items()
+                        curr_state.board_dict.items()
                                 if occupied and occupied != BLOCK]
 
-    for starting_point in ApproxDistances.starting_points:
-        ApproxDistances.distance_dict[starting_point] = 0
-        board_dict = ApproxDistances.curr_board_dict.copy()
-        board_dict[starting_point] = PIECE
-        for piece in curr_pieces:
-            board_dict[piece] = ""
-            for other_piece in set(curr_pieces) - set([piece]):
-                board_dict[other_piece] = BLOCK
-            uniform_cost_search(ApproxDistances(State(board_dict)))
+    approx_distances = dd(list)
+    for piece in curr_pieces:
+        board_dict = curr_state.board_dict.copy()
+        board_dict[piece] = ""
 
-    return ApproxDistances.distance_dict
+        for other_piece in (set(curr_pieces) - set([piece])):
+            board_dict[other_piece] = BLOCK
+
+        for cell in exit_cells:
+            board_dict[cell] = PIECE
+            ApproxDistances.distance_dict = {cell: 0}
+            uniform_cost_search(ApproxDistances(State(board_dict)))
+            if piece in ApproxDistances.distance_dict:
+                approx_distances[piece].append(ApproxDistances.distance_dict[piece])
+
+    print_board(approx_distances)
+
+    return approx_distances.values()
 
 class ApproxDistances(Problem):
     """
@@ -33,9 +37,6 @@ class ApproxDistances(Problem):
     detouring blocks by starting from exit cells and visiting each unoccupied
     hexes
     """
-
-    starting_points = []
-    curr_board_dict = {}
 
     # key: cell, value: approximate minimum distance to closest exit cell
     distance_dict = {}
@@ -49,9 +50,13 @@ class ApproxDistances(Problem):
         """
         possible_actions = []
         for curr_cell in self.get_pieces(state):
+            moveable = False
             # Move actions
             for next_cell in moveable_cells(curr_cell, state):
                 possible_actions += [(MOVE, curr_cell, next_cell)]
+                moveable = True
+            if moveable:
+                continue
             # Jump actions
             for next_cell in jumpable_cells(curr_cell, state):
                 possible_actions += [(JUMP, curr_cell, next_cell)]

@@ -1,10 +1,10 @@
 from aima_python.search import Problem
 
-from approxDistances import (ApproxDistances, setup_approx_distances)
+from approxDistances import (ApproxDistances, get_approx_distances)
 from state import State
 from utils import (
     COLOUR, PIECES, BLOCKS, BLOCK, MOVE, JUMP, EXIT,
-    all_cells, moveable_cells, jumpable_cells
+    all_cells, moveable_cells, jumpable_cells, hex_distance, avg, middle_piece, print_board
 )
 
 import math
@@ -40,11 +40,8 @@ class ChexersProblem(Problem):
         self.exit_cells = (set(EXIT_CELLS[self.piece_colour]) -
                                 set([tuple(block) for block in data[BLOCKS]]))
 
-        ApproxDistances.starting_points = self.exit_cells
-
         # setup the initial state
         initial_state = setup_initial_state(data)
-        # print_board(initial_state, "", True)
 
         # setup the goal state
         goal_state = setup_goal_state(initial_state)
@@ -97,10 +94,11 @@ class ChexersProblem(Problem):
             [board_dict[curr_cell], board_dict[next_cell]] = (
                         [board_dict[next_cell], board_dict[curr_cell]])
 
-        return State(board_dict, setup_approx_distances(State(board_dict)))
+        # print_board(board_dict)
+        return State(board_dict)
 
-    def path_cost(self, c, state1, action, state2):
-        return c + PATH_COSTS[action[0]]
+    # def path_cost(self, c, state1, action, state2):
+    #     return c + PATH_COSTS[action[0]]
 
     def h(self, node):
         piece_cells = self.get_pieces(node.state)
@@ -108,10 +106,16 @@ class ChexersProblem(Problem):
         # return the smallest heuristic of 0 in this case.
         if not piece_cells:
             return 0
+
         # Otherwise, the heuristic is the sum of [... + 1]. Plus 1 means that when each piece
         # reaches one of the exit cells, it still needs 1 step to exit the
         # board.
-        return sum(1 + node.state.distance_dict[cell] for cell in piece_cells)
+
+        # distances = get_approx_distances(node.state, self.exit_cells)
+        # return sum([1 + avg(d) for d in distances])
+
+        return sum(1 + avg([hex_distance(cell, target)
+                        for target in self.exit_cells]) for cell in piece_cells)
 
 
 def setup_initial_state(data):
@@ -124,7 +128,9 @@ def setup_initial_state(data):
     for cell in data[BLOCKS]:
         board_dict[tuple(cell)] = BLOCK
 
-    return State(board_dict, setup_approx_distances(State(board_dict)))
+    print_board(board_dict, "", True)
+
+    return State(board_dict)
 
 
 def setup_goal_state(initial_state):
@@ -139,21 +145,49 @@ def setup_goal_state(initial_state):
 
 # -----------------------------------------------------------------------------
 
-def hex_distance(a, b):
-    """
-    Acknowledgement: This function was copied and reproduced from a JS version
-    on redblobgames website, which can be found from
-    <https://www.redblobgames.com/grids/cellagons/#distances-axial>
 
-    Calculate the hex distance for axial coordinates system.
-    """
-    return (abs(a[0] - b[0])
-          + abs(a[0] + a[1] - b[0] - b[1])
-          + abs(a[1] - b[1])) / 2
+def get_nblocks(a, b, board_dict):
+    d = hex_distance(a, b)
+    if not d:
+        return 0
+    nblocks = 0
+    for i in range(0, int(d)+1):
+        if board_dict[cube_to_axial(cube_round(cube_lerp(a, b, 1.0/d * i)))] == BLOCK:
+            nblocks += 1
+    return nblocks
 
+def lerp(a, b, t): # for floats
+    return a + (b - a) * t
 
-def euclidean_distance(x, y):
-    return math.sqrt(sum([(a - b) ** 2 for a, b in zip(x, y)]))
+def cube_lerp(a, b, t): # for hexes
+    ax, ay, az = axial_to_cube(a)
+    bx, by, bz = axial_to_cube(b)
+    return (lerp(ax, bx, t),
+            lerp(ay, by, t),
+            lerp(az, bz, t))
 
-def avg(lst):
-    return sum(lst) / len(lst)
+def cube_to_axial(cube):
+    return (cube[0], cube[2])
+
+def axial_to_cube(hex):
+    x, z = hex
+    return (x, -x-z, z)
+
+def cube_round(cube):
+    x, y, z = cube
+    rx = round(x)
+    ry = round(y)
+    rz = round(z)
+
+    x_diff = abs(rx - x)
+    y_diff = abs(ry - y)
+    z_diff = abs(rz - z)
+
+    if x_diff > y_diff and x_diff > z_diff:
+        rx = -ry-rz
+    elif y_diff > z_diff:
+        ry = -rx-rz
+    else:
+        rz = -rx-ry
+
+    return (rx, ry, rz)
