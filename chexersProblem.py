@@ -122,7 +122,7 @@ def setup_initial_state(data):
     """
     Initial state:
     """
-    board_dict = dict(zip(all_cells(), [""] * TOTAL_CELLS))
+    board_dict = dict(zip(all_cells(), [EMPTY_CELL] * TOTAL_CELLS))
     for cell in data[PIECES]:
         board_dict[tuple(cell)] = data[COLOUR]
     for cell in data[BLOCKS]:
@@ -140,7 +140,7 @@ def setup_goal_state(initial_state):
     board_dict = initial_state.board_dict.copy()
     for cell, occupied in board_dict.items():
         if occupied != BLOCK:
-            board_dict[cell] = ""
+            board_dict[cell] = EMPTY_CELL
     return State(board_dict)
 
 # -----------------------------------------------------------------------------
