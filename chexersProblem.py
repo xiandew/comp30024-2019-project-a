@@ -4,7 +4,7 @@ from approxDistances import (ApproxDistances, get_approx_distances)
 from state import State
 from utils import (
     COLOUR, PIECES, BLOCKS, BLOCK, MOVE, JUMP, EXIT, EMPTY_CELL,
-    all_cells, moveable_cells, jumpable_cells, hex_distance, avg, middle_piece, print_board
+    all_cells, moveable_cells, jumpable_cells, hex_distance, print_board
 )
 
 import math
@@ -46,6 +46,8 @@ class ChexersProblem(Problem):
         # setup the goal state
         goal_state = setup_goal_state(initial_state)
 
+        self.distance_dict = get_approx_distances(goal_state, self.exit_cells)
+
         super().__init__(initial_state, goal_state)
 
     def is_exitable(self, piece):
@@ -74,11 +76,11 @@ class ChexersProblem(Problem):
         """
         Return cells of pieces in current state
         """
-        return [cell for cell, occupied in state.board_dict.items()
+        return [cell for cell, occupied in state.items()
                                     if occupied == self.piece_colour]
 
     def result(self, state, action):
-        board_dict = state.board_dict.copy()
+        board_dict = dict(state)
 
         # update the new state by the action
         operator = action[0]
@@ -111,11 +113,7 @@ class ChexersProblem(Problem):
         # reaches one of the exit cells, it still needs 1 step to exit the
         # board.
 
-        # distances = get_approx_distances(node.state, self.exit_cells)
-        # return sum([1 + avg(d) for d in distances])
-
-        return sum(1 + avg([hex_distance(cell, target)
-                        for target in self.exit_cells]) for cell in piece_cells)
+        return sum([1 + self.distance_dict[cell] for cell in piece_cells])
 
 
 def setup_initial_state(data):
@@ -137,57 +135,8 @@ def setup_goal_state(initial_state):
     """
     Goal state:
     """
-    board_dict = initial_state.board_dict.copy()
+    board_dict = dict(initial_state)
     for cell, occupied in board_dict.items():
         if occupied != BLOCK:
             board_dict[cell] = EMPTY_CELL
     return State(board_dict)
-
-# -----------------------------------------------------------------------------
-
-
-def get_nblocks(a, b, board_dict):
-    d = hex_distance(a, b)
-    if not d:
-        return 0
-    nblocks = 0
-    for i in range(0, int(d)+1):
-        if board_dict[cube_to_axial(cube_round(cube_lerp(a, b, 1.0/d * i)))] == BLOCK:
-            nblocks += 1
-    return nblocks
-
-def lerp(a, b, t): # for floats
-    return a + (b - a) * t
-
-def cube_lerp(a, b, t): # for hexes
-    ax, ay, az = axial_to_cube(a)
-    bx, by, bz = axial_to_cube(b)
-    return (lerp(ax, bx, t),
-            lerp(ay, by, t),
-            lerp(az, bz, t))
-
-def cube_to_axial(cube):
-    return (cube[0], cube[2])
-
-def axial_to_cube(hex):
-    x, z = hex
-    return (x, -x-z, z)
-
-def cube_round(cube):
-    x, y, z = cube
-    rx = round(x)
-    ry = round(y)
-    rz = round(z)
-
-    x_diff = abs(rx - x)
-    y_diff = abs(ry - y)
-    z_diff = abs(rz - z)
-
-    if x_diff > y_diff and x_diff > z_diff:
-        rx = -ry-rz
-    elif y_diff > z_diff:
-        ry = -rx-rz
-    else:
-        rz = -rx-ry
-
-    return (rx, ry, rz)

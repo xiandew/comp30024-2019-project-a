@@ -39,9 +39,8 @@ def moveable_cells(curr_cell, state):
     moveable_cells are cells next to the current_cell with nothing occupied
     """
     neighbours = generate_cells(curr_cell, MOVE_DELTA)
-    board_dict = state.board_dict
     return [cell for cell in neighbours
-                    if cell in board_dict and board_dict[cell] == EMPTY_CELL]
+                    if cell in state and state[cell] == EMPTY_CELL]
 
 def jumpable_cells(curr_cell, state):
     """
@@ -49,17 +48,14 @@ def jumpable_cells(curr_cell, state):
     and cells in the middle must be occupied by either blocks or pieces
     """
     generated_cells = generate_cells(curr_cell, JUMP_DELTA)
-    board_dict = state.board_dict
     jumpable = []
     for cell in generated_cells:
-        if cell in board_dict and board_dict[cell] == EMPTY_CELL:
-            jumpover = middle_piece(curr_cell, cell)
-            if jumpover in board_dict and board_dict[jumpover] != EMPTY_CELL:
+        if cell in state and state[cell] == EMPTY_CELL:
+            jumpover = tuple(map(lambda x, y: (x + y) // 2, curr_cell, cell))
+            if jumpover in state and state[jumpover] != EMPTY_CELL:
                 jumpable.append(cell)
     return jumpable
 
-def middle_piece(a,b):
-    return tuple(map(lambda x, y: (x + y) // 2, a, b))
 
 def hex_distance(a, b):
     """

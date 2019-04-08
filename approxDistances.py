@@ -2,34 +2,21 @@ from aima_python.search import (Problem, uniform_cost_search)
 
 from state import State
 from utils import (
-    PIECE, BLOCK, MOVE, JUMP, EXIT,
+    PIECE, BLOCK, MOVE, JUMP, EXIT, EMPTY_CELL, JUMP_DELTA, generate_cells,
     all_cells, moveable_cells, jumpable_cells, avg, print_board
 )
-from collections import defaultdict as dd
 
 def get_approx_distances(curr_state, exit_cells):
-    curr_pieces = [cell for cell, occupied in
-                        curr_state.board_dict.items()
-                                if occupied and occupied != BLOCK]
 
-    approx_distances = dd(list)
-    for piece in curr_pieces:
-        board_dict = curr_state.board_dict.copy()
-        board_dict[piece] = ""
+    for cell in exit_cells:
+        board_dict = dict(curr_state)
+        board_dict[cell] = PIECE
+        ApproxDistances.distance_dict[cell] = 0
+        uniform_cost_search(ApproxDistances(State(board_dict)))
 
-        for other_piece in (set(curr_pieces) - set([piece])):
-            board_dict[other_piece] = BLOCK
+    print_board(ApproxDistances.distance_dict)
 
-        for cell in exit_cells:
-            board_dict[cell] = PIECE
-            ApproxDistances.distance_dict = {cell: 0}
-            uniform_cost_search(ApproxDistances(State(board_dict)))
-            if piece in ApproxDistances.distance_dict:
-                approx_distances[piece].append(ApproxDistances.distance_dict[piece])
-
-    print_board(approx_distances)
-
-    return approx_distances.values()
+    return ApproxDistances.distance_dict
 
 class ApproxDistances(Problem):
     """
@@ -50,20 +37,16 @@ class ApproxDistances(Problem):
         """
         possible_actions = []
         for curr_cell in self.get_pieces(state):
-            moveable = False
             # Move actions
             for next_cell in moveable_cells(curr_cell, state):
                 possible_actions += [(MOVE, curr_cell, next_cell)]
-                moveable = True
-            if moveable:
-                continue
             # Jump actions
-            for next_cell in jumpable_cells(curr_cell, state):
+            for next_cell in relaxed_jumpable_cells(curr_cell, state):
                 possible_actions += [(JUMP, curr_cell, next_cell)]
         return possible_actions
 
     def result(self, state, action):
-        board_dict = state.board_dict.copy()
+        board_dict = dict(state)
         curr_cell, next_cell = action[1], action[2]
         [board_dict[curr_cell], board_dict[next_cell]] = (
                     [board_dict[next_cell], board_dict[curr_cell]] )
@@ -81,5 +64,12 @@ class ApproxDistances(Problem):
         """
         Return cells of pieces in current state
         """
-        return [cell for cell, occupied in state.board_dict.items()
+        return [cell for cell, occupied in state.items()
                                                     if occupied == PIECE]
+
+
+def relaxed_jumpable_cells(curr_cell, state):
+    """
+    """
+    return [cell for cell in generate_cells(curr_cell, JUMP_DELTA)
+                            if cell in state and state[cell] == EMPTY_CELL]

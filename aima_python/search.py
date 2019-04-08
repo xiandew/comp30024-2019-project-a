@@ -265,20 +265,20 @@ def best_first_graph_search(problem, f):
     node = Node(problem.initial)
     frontier = PriorityQueue('min', f)
     frontier.append(node)
-    explored = set()
+    explored = {}
+
     while frontier:
         node = frontier.pop()
-        # print_board(node.state)
         if problem.goal_test(node.state):
             return node
-        explored.add(node.state)
+        explored[node.state] = node
         for child in node.expand(problem):
-            if child.state not in explored and child not in frontier:
+            if ( child.state not in explored or
+                    child.path_cost < explored[child.state].path_cost ):
+                # if child in frontier:
+                #     del frontier[child]
                 frontier.append(child)
-            elif child in frontier:
-                if f(child) < frontier[child]:
-                    del frontier[child]
-                    frontier.append(child)
+                explored[child.state] = child
     return None
 
 
