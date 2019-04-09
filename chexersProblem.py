@@ -1,6 +1,6 @@
-from aima_python.search import Problem
+from aima_python.problem import Problem
 
-from approxDistances import (ApproxDistances, get_approx_distances)
+from approxDistances import get_approx_distances
 from state import State
 from utils import (
     COLOUR, PIECES, BLOCKS, BLOCK, MOVE, JUMP, EXIT, EMPTY_CELL,

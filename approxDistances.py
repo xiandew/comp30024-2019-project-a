@@ -1,4 +1,5 @@
-from aima_python.search import (Problem, uniform_cost_search)
+from aima_python.problem import Problem
+from aima_python.search import uniform_cost_search
 
 from state import State
 from utils import (

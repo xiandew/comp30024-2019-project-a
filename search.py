@@ -15,7 +15,7 @@ import time
 from chexersProblem import ChexersProblem
 from state import State
 
-from aima_python.search import (astar_search, depth_first_graph_search)
+from aima_python.search import astar_search
 
 # -----------------------------------------------------------------------------
 
