@@ -8,9 +8,11 @@ from utils import (
 
 def get_approx_path_costs(exit_cells, blocks):
 
+    ApproxPathCosts.blocks = blocks
+
     for cell in exit_cells:
         ApproxPathCosts.path_costs[cell] = 0
-        uniform_cost_search(ApproxPathCosts(cell, blocks))
+        uniform_cost_search(ApproxPathCosts(cell))
 
     print_board(ApproxPathCosts.path_costs)
 
@@ -29,11 +31,12 @@ class ApproxPathCosts(Problem):
     Note that these path costs do not count the exit actions.
     """
 
+    blocks = []
+
     # key: cell, value: approximate minimum distance to closest exit cell
     path_costs = {}
 
-    def __init__(self, piece, blocks):
-        self.blocks = blocks
+    def __init__(self, piece):
         super().__init__(piece)
 
     def actions(self, piece):
@@ -41,8 +44,8 @@ class ApproxPathCosts(Problem):
         Possible actions include move and relaxed jump actions
         """
         return [(piece, next_cell) for next_cell in
-                    ( moveable_cells(piece, self.blocks) +
-                            relaxed_jumpable_cells(piece, self.blocks) )]
+                    ( moveable_cells(piece, ApproxPathCosts.blocks) +
+                        relaxed_jumpable_cells(piece, ApproxPathCosts.blocks) )]
 
     def result(self, piece, action):
         return action[1]
