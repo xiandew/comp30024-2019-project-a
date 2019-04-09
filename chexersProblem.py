@@ -27,11 +27,13 @@ class ChexersProblem(Problem):
         # Setup the exit cells for given colour with blocked cells removed
         self.exit_cells = set(EXIT_CELLS[data[COLOUR]]) - set(self.blocks)
 
-        # setup the initial state
+        # Our state is a tuple containing the current cells of the pieces
+        # Setup the initial state.
         initial_state = tuple(sorted([tuple(cell) for cell in data[PIECES]]))
         # print_initial_state(data)
 
-        # setup the goal state
+        # Setup the goal state. The goal state is to move all pieces
+        # off the board.
         goal_state = tuple()
 
         self.distance_dict = get_approx_path_costs(self.exit_cells, self.blocks)
