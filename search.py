@@ -6,6 +6,8 @@ Acknowledgement: Search algorithms are referenced from AIMA provided code.
 Source files can be found from <https://github.com/aimacode/aima-python>
 
 Authors:
+    Mingyu Su,
+    Xiande Wen, 905003
 """
 
 import sys
