@@ -21,16 +21,15 @@ class ChexersProblem(Problem):
     Methods were implemented by formulating the chexers problem.
     """
     def __init__(self, data):
-        # the colour of the pieces
+        # The coordinates of the blocks
         self.blocks = [tuple(block) for block in data[BLOCKS]]
 
-        # Setup the exit cells for given colour with blocked cells removed
+        # Setup the exit cells for a given colour with blocked cells removed
         self.exit_cells = set(EXIT_CELLS[data[COLOUR]]) - set(self.blocks)
 
         # Our state is a tuple containing the current cells of the pieces
         # Setup the initial state.
         initial_state = tuple(sorted([tuple(cell) for cell in data[PIECES]]))
-        # print_initial_state(data)
 
         # Setup the goal state. The goal state is to move all pieces
         # off the board.
@@ -64,18 +63,19 @@ class ChexersProblem(Problem):
         return possible_actions
 
     def result(self, state, action):
+        """
+        Update the new state by the action
+        """
         pieces = list(state)
-
-        # update the new state by the action
         operator = action[0]
 
-        # Exit action will result one piece disappear and leave the exit cell
-        # empty
+        # Exit action will move one piece out from the state and turn the exit 
+        # cell empty again
         if operator == EXIT:
             curr_cell = action[1]
             pieces.remove(curr_cell)
 
-        # Move or jump action will exchange the states of two cells
+        # Update the current position of the piece
         if operator == MOVE or operator == JUMP:
             curr_cell, next_cell = action[1], action[2]
             pieces.remove(curr_cell)
@@ -85,14 +85,14 @@ class ChexersProblem(Problem):
 
     def h(self, node):
         piece_cells = node.state
-        # If there are no pieces, which means the node will reach the goal,
-        # return the smallest heuristic of 0 in this case.
+        # If there are no pieces, which means the node will reach the goal.
+        # Return the smallest heuristic value, which is 0 in this case.
         if not piece_cells:
             return 0
 
         # Otherwise, the heuristic is the sum of [approximate path cost of
         # each piece + 1]. Plus 1 represents the exit action since the
-        # approximate path costs did not count the exit action.
+        # approximate path cost did not count the exit action.
         return sum([1 + self.distance_dict[cell] for cell in piece_cells])
 
 

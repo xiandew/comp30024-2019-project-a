@@ -29,7 +29,7 @@ ALL_CELLS = all_cells()
 
 def generate_cells(cell, delta_pairs):
     """
-    generate a list of six cells by adding delta values
+    generate a list of cells by adding delta values
     """
     return [(cell[0] + delta_q, cell[1] + delta_r)
                             for delta_q, delta_r in delta_pairs]
@@ -46,14 +46,14 @@ def moveable_cells(curr_cell, occupied):
 def jumpable_cells(curr_cell, occupied):
     """
     jumpable_cells are cells that are one cell apart from the current cell
-    and cells in the middle must be occupied by either blocks or pieces
+    and cells in the middle must be occupied by either a block or a piece
     """
     generated_cells = generate_cells(curr_cell, JUMP_DELTA)
     jumpable = []
     for cell in generated_cells:
         if cell in ALL_CELLS and cell not in occupied:
-            jumpover = tuple(map(lambda x, y: (x + y) // 2, curr_cell, cell))
-            if jumpover in ALL_CELLS and jumpover in occupied:
+            middle_cell = tuple(map(lambda x, y: (x + y) // 2, curr_cell, cell))
+            if middle_cell in ALL_CELLS and middle_cell in occupied:
                 jumpable.append(cell)
     return jumpable
 
