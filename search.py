@@ -12,12 +12,10 @@ import sys
 import json
 import time
 
-from chexersProblem import ChexersProblem
-from state import State
-
 from aima_python.search import astar_search
+from chexersProblem import ChexersProblem
 
-# -----------------------------------------------------------------------------
+# ______________________________________________________________________________
 
 # String constants to avoid typos
 MOVE = "MOVE"
@@ -51,7 +49,7 @@ def print_actions(goal_node):
             curr_cell, next_cell = action[1], action[2]
             print("{} from {} to {}.".format(operator, curr_cell, next_cell))
 
-# -----------------------------------------------------------------------------
+# ______________________________________________________________________________
 
 
 # when this module is executed, run the `main` function:

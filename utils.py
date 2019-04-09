@@ -2,13 +2,9 @@
 COLOUR = "colour"
 PIECES = "pieces"
 BLOCKS = "blocks"
-PIECE = "piece"
-BLOCK = "block"
 MOVE = "MOVE"
 JUMP = "JUMP"
 EXIT = "EXIT"
-EMPTY_CELL = ""
-
 
 # The minimum and maximum coordinates on the q and r axes
 MIN_COORDINATE = -3
@@ -17,7 +13,8 @@ MAX_COORDINATE = 3
 # Delta values which give the corresponding cells by adding them to the current
 # cell
 MOVE_DELTA = [(0, 1), (1, 0), (-1, 1), (0, -1), (-1, 0), (1, -1)]
-JUMP_DELTA = [(0, -2), (2, -2), (2, 0), (0, 2), (-2, 2), (-2, 0)]
+JUMP_DELTA = [(delta_q * 2, delta_r * 2) for delta_q, delta_r in MOVE_DELTA]
+
 
 def all_cells():
     """
@@ -26,23 +23,27 @@ def all_cells():
     ran = range(MIN_COORDINATE, MAX_COORDINATE + 1)
     return [(q, r) for q in ran for r in ran if -q-r in ran]
 
+
+ALL_CELLS = all_cells()
+
+
 def generate_cells(cell, delta_pairs):
     """
     generate a list of six cells by adding delta values
     """
     return [(cell[0] + delta_q, cell[1] + delta_r)
-            for delta_q, delta_r in delta_pairs]
+                            for delta_q, delta_r in delta_pairs]
 
 
-def moveable_cells(curr_cell, state):
+def moveable_cells(curr_cell, occupied):
     """
     moveable_cells are cells next to the current_cell with nothing occupied
     """
     neighbours = generate_cells(curr_cell, MOVE_DELTA)
     return [cell for cell in neighbours
-                    if cell in state and state[cell] == EMPTY_CELL]
+                    if cell in ALL_CELLS and cell not in occupied]
 
-def jumpable_cells(curr_cell, state):
+def jumpable_cells(curr_cell, occupied):
     """
     jumpable_cells are cells that are one cell apart from the current cell
     and cells in the middle must be occupied by either blocks or pieces
@@ -50,32 +51,11 @@ def jumpable_cells(curr_cell, state):
     generated_cells = generate_cells(curr_cell, JUMP_DELTA)
     jumpable = []
     for cell in generated_cells:
-        if cell in state and state[cell] == EMPTY_CELL:
+        if cell in ALL_CELLS and cell not in occupied:
             jumpover = tuple(map(lambda x, y: (x + y) // 2, curr_cell, cell))
-            if jumpover in state and state[jumpover] != EMPTY_CELL:
+            if jumpover in ALL_CELLS and jumpover in occupied:
                 jumpable.append(cell)
     return jumpable
-
-
-def hex_distance(a, b):
-    """
-    Acknowledgement: This function was copied and reproduced from a JS version
-    on redblobgames website, which can be found from
-    <https://www.redblobgames.com/grids/cellagons/#distances-axial>
-
-    Calculate the hex distance for axial coordinates system.
-    """
-    return (abs(a[0] - b[0])
-          + abs(a[0] + a[1] - b[0] - b[1])
-          + abs(a[1] - b[1])) / 2
-
-
-# def euclidean_distance(x, y):
-#     return math.sqrt(sum([(a - b) ** 2 for a, b in zip(x, y)]))
-
-
-def avg(lst):
-    return sum(lst) / len(lst)
 
 
 def print_board(board_dict, message="", debug=False, **kwargs):

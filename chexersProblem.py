@@ -1,17 +1,11 @@
 from aima_python.problem import Problem
-
-from approxDistances import get_approx_distances
-from state import State
+from approxPathCosts import get_approx_path_costs
 from utils import (
-    COLOUR, PIECES, BLOCKS, BLOCK, MOVE, JUMP, EXIT, EMPTY_CELL,
-    all_cells, moveable_cells, jumpable_cells, hex_distance, print_board
+    COLOUR, PIECES, BLOCKS, MOVE, JUMP, EXIT, ALL_CELLS,
+    moveable_cells, jumpable_cells, print_board
 )
 
-import math
-
-# Total number of cells on the board
-TOTAL_CELLS = 37
-
+# ______________________________________________________________________________
 # The exit cells for pieces of each colour
 EXIT_CELLS = {
     "red": [(3, -3), (3, -2), (3, -1), (3, 0)],
@@ -19,13 +13,7 @@ EXIT_CELLS = {
     "green": [(-3, 3), (-2, 3), (-1, 3), (0, 3)]
 }
 
-# Path costs of three actions, which will set the algorithm's preference of
-# each action
-PATH_COSTS = {
-    MOVE: 2,
-    JUMP: 1,
-    EXIT: 0
-}
+# ______________________________________________________________________________
 
 class ChexersProblem(Problem):
     """
@@ -34,53 +22,47 @@ class ChexersProblem(Problem):
     """
     def __init__(self, data):
         # the colour of the pieces
-        self.piece_colour = data[COLOUR]
+        self.blocks = [tuple(block) for block in data[BLOCKS]]
 
         # Setup the exit cells for given colour with blocked cells removed
-        self.exit_cells = (set(EXIT_CELLS[self.piece_colour]) -
-                                set([tuple(block) for block in data[BLOCKS]]))
+        self.exit_cells = set(EXIT_CELLS[data[COLOUR]]) - set(self.blocks)
 
         # setup the initial state
-        initial_state = setup_initial_state(data)
+        initial_state = tuple(sorted([tuple(cell) for cell in data[PIECES]]))
+        # print_initial_state(data)
 
         # setup the goal state
-        goal_state = setup_goal_state(initial_state)
+        goal_state = tuple()
 
-        self.distance_dict = get_approx_distances(goal_state, self.exit_cells)
+        self.distance_dict = get_approx_path_costs(self.exit_cells, self.blocks)
 
         super().__init__(initial_state, goal_state)
-
-    def is_exitable(self, piece):
-        if piece in self.exit_cells:
-            return True
-        return False
 
     def actions(self, state):
         """
         Possible actions include move, jump and exit.
         """
+        occupied = list(state) + self.blocks
         possible_actions = []
-        for curr_cell in self.get_pieces(state):
+
+        for curr_cell in state:
+
             # Move actions
-            for next_cell in moveable_cells(curr_cell, state):
+            for next_cell in moveable_cells(curr_cell, occupied):
                 possible_actions += [(MOVE, curr_cell, next_cell)]
+
             # Jump actions
-            for next_cell in jumpable_cells(curr_cell, state):
+            for next_cell in jumpable_cells(curr_cell, occupied):
                 possible_actions += [(JUMP, curr_cell, next_cell)]
+
             # Exit actions
-            if self.is_exitable(curr_cell):
+            if curr_cell in self.exit_cells:
                 possible_actions += [(EXIT, curr_cell)]
+
         return possible_actions
 
-    def get_pieces(self, state):
-        """
-        Return cells of pieces in current state
-        """
-        return [cell for cell, occupied in state.items()
-                                    if occupied == self.piece_colour]
-
     def result(self, state, action):
-        board_dict = dict(state)
+        pieces = list(state)
 
         # update the new state by the action
         operator = action[0]
@@ -89,54 +71,35 @@ class ChexersProblem(Problem):
         # empty
         if operator == EXIT:
             curr_cell = action[1]
-            board_dict[curr_cell] = EMPTY_CELL
+            pieces.remove(curr_cell)
+
         # Move or jump action will exchange the states of two cells
         if operator == MOVE or operator == JUMP:
             curr_cell, next_cell = action[1], action[2]
-            [board_dict[curr_cell], board_dict[next_cell]] = (
-                        [board_dict[next_cell], board_dict[curr_cell]])
+            pieces.remove(curr_cell)
+            pieces.append(next_cell)
 
-        # print_board(board_dict)
-        return State(board_dict)
-
-    # def path_cost(self, c, state1, action, state2):
-    #     return c + PATH_COSTS[action[0]]
+        return tuple(sorted(pieces))
 
     def h(self, node):
-        piece_cells = self.get_pieces(node.state)
+        piece_cells = node.state
         # If there are no pieces, which means the node will reach the goal,
         # return the smallest heuristic of 0 in this case.
         if not piece_cells:
             return 0
 
-        # Otherwise, the heuristic is the sum of [... + 1]. Plus 1 means that when each piece
-        # reaches one of the exit cells, it still needs 1 step to exit the
-        # board.
-
+        # Otherwise, the heuristic is the sum of [approximate path cost of
+        # each piece + 1]. Plus 1 represents the exit action since the
+        # approximate path costs did not count the exit action.
         return sum([1 + self.distance_dict[cell] for cell in piece_cells])
 
 
-def setup_initial_state(data):
-    """
-    Initial state:
-    """
-    board_dict = dict(zip(all_cells(), [EMPTY_CELL] * TOTAL_CELLS))
+def print_initial_state(data):
+
+    board_dict = dict(zip(ALL_CELLS, [""] * len(ALL_CELLS)))
     for cell in data[PIECES]:
         board_dict[tuple(cell)] = data[COLOUR]
     for cell in data[BLOCKS]:
-        board_dict[tuple(cell)] = BLOCK
+        board_dict[tuple(cell)] = "BLOCK"
 
     print_board(board_dict, "", True)
-
-    return State(board_dict)
-
-
-def setup_goal_state(initial_state):
-    """
-    Goal state:
-    """
-    board_dict = dict(initial_state)
-    for cell, occupied in board_dict.items():
-        if occupied != BLOCK:
-            board_dict[cell] = EMPTY_CELL
-    return State(board_dict)
