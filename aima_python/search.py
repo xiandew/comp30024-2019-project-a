@@ -1,5 +1,6 @@
 from .priorityQueue import PriorityQueue
 from .node import Node
+import functools
 
 # ______________________________________________________________________________
 # Uninformed Search algorithms
